@@ -147,6 +147,7 @@ def process_pdf_and_ask(uploaded_pdf, question):
     documents = loader.load()
     return rag_answer_from_text(question, documents)
 
+
 def rag_answer_from_text(question, documents):
     tokenizer = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
     splitter = RecursiveCharacterTextSplitter(

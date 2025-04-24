@@ -178,7 +178,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipe
 import os
 import tempfile
 import base64
-from rag_utils import process_pdf_and_ask, rag_answer_from_text
+from rag_utils import process_pdf_and_ask
 from audio_utils import transcribe_audio, text_to_speech
 from langchain_community.document_loaders import PyPDFLoader
 
@@ -223,7 +223,7 @@ if pdf_file:
             st.warning("⚠️ Please provide a text or audio question.")
         else:
             try:
-                answer = process_pdf_and_ask(pdf_file, final_question, openai_client)
+                answer = process_pdf_and_ask(pdf_file, final_question)  # Updated to match the function signature
                 st.subheader("📚 Answer from Document:")
                 st.success(answer)
                 st.audio(text_to_speech(answer), format="audio/mp3")
@@ -244,7 +244,7 @@ if st.button("Analyze Text"):
 
             response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[
+                messages=[ 
                     {"role": "system", "content": "You are a sentiment analysis assistant. Respond with 'Positive', 'Negative', or 'Neutral' and give a brief reason."},
                     {"role": "user", "content": user_input}
                 ]

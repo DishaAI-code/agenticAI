@@ -81,7 +81,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 import tempfile
 import base64

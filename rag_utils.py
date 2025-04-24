@@ -72,7 +72,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from openai import OpenAI
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 # Initialize OpenAI client with Streamlit secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])

@@ -29,7 +29,7 @@
 
 import openai
 import tempfile
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 from gtts import gTTS
 

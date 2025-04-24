@@ -2,3 +2,8 @@ streamlit
 openai>=1.0.0
 transformers
 torch
+langchain
+langchain-community
+chromadb
+sentence-transformers
+gtts

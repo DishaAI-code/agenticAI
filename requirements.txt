@@ -4,7 +4,6 @@ transformers
 torch
 langchain
 langchain-community
-chromadb
 sentence-transformers
 gtts
 pypdf

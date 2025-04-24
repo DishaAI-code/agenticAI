@@ -33,8 +33,8 @@ from dotenv import load_dotenv
 import os
 from gtts import gTTS
 
-load_dotenv()
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client with Streamlit secrets
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def transcribe_audio(audio_file):
     # `audio_file` is a file-like object (e.g., from Streamlit or a download)

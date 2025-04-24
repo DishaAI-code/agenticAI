@@ -74,8 +74,8 @@ from langchain.vectorstores import Chroma
 from openai import OpenAI
 from dotenv import load_dotenv
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client with Streamlit secrets
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 

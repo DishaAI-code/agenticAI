@@ -27,17 +27,41 @@
 
 
 
-import openai
+# import openai
+# import tempfile
+# # from dotenv import load_dotenv
+# import os
+# from gtts import gTTS
+
+# # Initialize OpenAI client with Streamlit secrets
+# client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# def transcribe_audio(audio_file):
+#     # `audio_file` is a file-like object (e.g., from Streamlit or a download)
+#     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+#         tmp.write(audio_file.read())
+#         tmp_path = tmp.name
+
+#     with open(tmp_path, "rb") as f:
+#         transcript = client.audio.transcriptions.create(
+#             model="whisper-1",
+#             file=f
+#         )
+#     return transcript.text
+
+# def text_to_speech(text):
+#     tts = gTTS(text)
+#     temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
+#     tts.save(temp_path)
+#     return temp_path
+
+
+
+#------------------------------------------------updated---------------------------
 import tempfile
-# from dotenv import load_dotenv
-import os
 from gtts import gTTS
 
-# Initialize OpenAI client with Streamlit secrets
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-def transcribe_audio(audio_file):
-    # `audio_file` is a file-like object (e.g., from Streamlit or a download)
+def transcribe_audio(audio_file, client):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         tmp.write(audio_file.read())
         tmp_path = tmp.name
@@ -54,4 +78,3 @@ def text_to_speech(text):
     temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
     tts.save(temp_path)
     return temp_path
-

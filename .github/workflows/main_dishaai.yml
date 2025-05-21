@@ -77,4 +77,4 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: 'dishaai'
-          slot-name: 'Production'
+          slot-name: 'Production'

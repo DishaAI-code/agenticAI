@@ -1,4 +1,4 @@
-  name: Build and deploy Python app to Azure Web App - dishaai
+name: Build and deploy Python app to Azure Web App - dishaai
 
 on:
   push:
@@ -61,8 +61,7 @@ jobs:
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
-          app-name: 'dishaai'
-          slot-name: 'Production'
+          app-name: dishaai
+          slot-name: Production
           package: release.zip

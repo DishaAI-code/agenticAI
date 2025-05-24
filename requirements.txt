@@ -1,5 +1,5 @@
-streamlit
 openai>=1.0.0
+streamlit>=1.30
 transformers
 torch
 langchain
@@ -8,3 +8,7 @@ sentence-transformers
 gtts
 pypdf
 faiss-cpu
+sounddevice
+scipy
+python-dotenv
+requests

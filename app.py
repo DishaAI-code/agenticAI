@@ -186,65 +186,65 @@ st.markdown("""Handles **Text**, **Audio**, and **PDFs** with:
 """)
 
 # === PDF Upload + Ask ===
-st.header("📄 Upload PDF for Q&A")
+st.header(" Upload PDF for Q&A")
 pdf_file = st.file_uploader("Upload a PDF", type=["pdf"])
 
 if pdf_file:
-    st.success("✅ PDF uploaded. Ask a question below.")
+    st.success(" PDF uploaded. Ask a question below.")
     
     st.markdown("###  Type Your Question")
     question = st.text_input("Enter a question based on the PDF")
 
-    st.markdown("### 🎤 Or Use Microphone (with VAD)")
+    st.markdown("###  Or Use Microphone (with VAD)")
 
-    if st.button("🎙️ Record Audio"):
+    if st.button(" Record Audio"):
         st.info("Listening... Speak now.")
         audio_path = record_audio_with_vad()
         if audio_path:
             transcribed = transcribe_audio(audio_path)
-            st.success(f"📝 Transcribed: {transcribed}")
+            st.success(f" Transcribed: {transcribed}")
             question = transcribed
         else:
-            st.warning("❌ No speech detected.")
+            st.warning(" No speech detected.")
 
     uploaded_audio = st.file_uploader("Or upload your own audio (WAV)", type=["wav"])
     if uploaded_audio:
-        with st.spinner("🔊 Transcribing uploaded audio..."):
+        with st.spinner(" Transcribing uploaded audio..."):
             question = transcribe_audio(uploaded_audio)
-            st.success(f"📝 Transcribed: {question}")
+            st.success(f" Transcribed: {question}")
 
-    if st.button("🧠 Ask PDF"):
+    if st.button(" Ask PDF"):
         if not question.strip():
-            st.warning("⚠️ Provide a question via text or audio.")
+            st.warning(" Provide a question via text or audio.")
         else:
             flagged, reasons = moderate_text(question)
             if flagged is None:
-                st.error("⚠️ Moderation system failed.")
+                st.error(" Moderation system failed.")
             elif flagged:
-                st.error("🚫 Blocked by moderation.")
+                st.error(" Blocked by moderation.")
                 st.info(f"Reason: {', '.join(reasons)}")
             else:
                 try:
                     answer = process_pdf_and_ask(pdf_file, question)
-                    st.subheader("📚 Answer from Document:")
+                    st.subheader(" Answer from Document:")
                     st.success(answer)
                     st.audio(text_to_speech(answer), format="audio/mp3")
                 except Exception as e:
-                    st.error(f"❌ Error: {e}")
+                    st.error(f" Error: {e}")
 
 # === Text + Intent + Sentiment ===
-st.header("📝 Analyze Free Text")
+st.header(" Analyze Free Text")
 user_input = st.text_area("Enter your message", "", height=100)
 
 if st.button("Analyze Text"):
     if not user_input.strip():
-        st.warning("⚠️ Please enter text.")
+        st.warning(" Please enter text.")
     else:
         flagged, reasons = moderate_text(user_input)
         if flagged is None:
-            st.error("⚠️ Moderation failed.")
+            st.error(" Moderation failed.")
         elif flagged:
-            st.error("🚫 Blocked by moderation.")
+            st.error(" Blocked by moderation.")
             st.info(f"Reason: {', '.join(reasons)}")
         else:
             try:
@@ -258,14 +258,14 @@ if st.button("Analyze Text"):
                 )
                 sentiment = response.choices[0].message.content.strip()
 
-                st.subheader("🧠 Detected Intent:")
+                st.subheader(" Detected Intent:")
                 st.info(intent_label)
 
-                st.subheader("💬 Predicted Sentiment:")
+                st.subheader(" Predicted Sentiment:")
                 st.success(sentiment)
 
             except Exception as e:
-                st.error(f"❌ Error during analysis: {e}")
+                st.error(f" Error during analysis: {e}")
 
 
 #-------------------------------------------updated---------------------------

@@ -23,7 +23,7 @@ st.title("🎙️ Multimodal RAG + Voice Bot")
 
 
 # === PDF Upload Section ===
-st.header("📄 Upload PDF for Q&A")
+st.header(" Upload PDF for Q&A")
 pdf_file = st.file_uploader("Upload a PDF", type=["pdf"])
 
 if pdf_file:
@@ -56,7 +56,7 @@ if pdf_file:
         else:
             st.warning("No speech detected or error occurred.")
 
-    if st.button("🧠 Ask PDF"):
+    if st.button(" Ask PDF"):
         # Get the current question from session state
         current_question = st.session_state.pdf_question
         
@@ -72,7 +72,7 @@ if pdf_file:
             else:
                 try:
                     answer = process_pdf_and_ask(pdf_file, current_question)
-                    st.subheader("📚 Answer from Document")
+                    st.subheader(" Answer from Document")
                     st.success(answer)
                     st.audio(text_to_speech(answer), format="audio/mp3")
                 except Exception as e:
@@ -98,7 +98,7 @@ if user_input != st.session_state.message_input:
     st.session_state.message_input = user_input
 
 # Add Azure microphone recording option
-if st.button("🎙️ Record Audio for Analysis (Azure)"):
+if st.button(" Record Audio for Analysis (Azure)"):
     st.info("Listening with Azure... (Speak now)")
     transcribed_text = recognize_speech_azure()
     

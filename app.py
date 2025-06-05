@@ -338,7 +338,7 @@ eleven_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_key)
 
 st.set_page_config(page_title="Multimodal AI QnA")
-st.title("🎙️ Multimodal RAG + Voice Bot")
+st.title("🎙️ Multimodal RAG  Voice Bot")
 
 def analyze_text(text):
     """Function to analyze text for intent and sentiment"""

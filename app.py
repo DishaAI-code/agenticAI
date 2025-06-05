@@ -464,111 +464,105 @@ from rag_utils import process_pdf_and_ask, process_text_with_llm
 from audio_utils import recognize_speech_azure, text_to_speech
 from moderation_utils import moderate_text
 
-# === Load Keys ===
+# Initialize
 load_dotenv()
-openai_key = os.getenv("OPENAI_API_KEY")
-eleven_key = os.getenv("ELEVENLABS_API_KEY")
-client = OpenAI(api_key=openai_key)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Initialize session state
-if 'user_input' not in st.session_state:
+# Session state
+if 'audio_data' not in st.session_state:
     st.session_state.update({
-        'user_input': "",
+        'audio_data': None,
+        'transcribed_text': "",
+        'processing': False,
         'pdf_file': None,
-        'processing': False
+        'is_recording': False
     })
 
-# Configure page
-st.set_page_config(page_title="Multimodal AI QnA", layout="wide")
-st.title("🎙️ Multimodal RAG Voice Bot")
+# UI Config
+st.set_page_config(page_title="Voice RAG Bot", layout="wide")
+st.title("🎙️ Smart Voice Assistant")
 
 def analyze_text(text):
-    """Analyze text for intent and sentiment with error handling"""
+    """Enhanced text analysis with single API call"""
     flagged, reasons = moderate_text(text)
-    if flagged is None:
-        st.error("Moderation failed.")
-        return None, None
-    elif flagged:
-        st.error(f"Content blocked: {', '.join(reasons)}")
+    if flagged:
+        st.error(f"Content blocked: {reasons}")
         return None, None
     
     try:
-        # Combined analysis in single API call
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": """Analyze this text. Respond in this exact format:
+                {"role": "system", "content": """Analyze this text. Respond with:
                 Intent: <detected intent>
                 Sentiment: <positive/neutral/negative>"""},
                 {"role": "user", "content": text}
             ]
         )
         analysis = response.choices[0].message.content
-        intent = analysis.split("Intent: ")[1].split("\n")[0]
-        sentiment = analysis.split("Sentiment: ")[1].strip()
-        return intent, sentiment
+        return analysis.split("Intent: ")[1].split("\n")[0], analysis.split("Sentiment: ")[1]
     except Exception as e:
         st.error(f"Analysis error: {str(e)}")
         return None, None
 
-def process_user_input(text):
-    """Process user input through all pipelines"""
-    if not text.strip():
+def process_query():
+    """Handle the full processing pipeline"""
+    if not st.session_state.transcribed_text:
         return
     
     st.session_state.processing = True
     
-    # Analysis section
-    with st.expander("💬 Message Analysis", expanded=True):
-        intent, sentiment = analyze_text(text)
+    # Analysis
+    with st.expander("💬 Analysis"):
+        intent, sentiment = analyze_text(st.session_state.transcribed_text)
         if intent and sentiment:
             col1, col2 = st.columns(2)
             with col1:
-                st.subheader("🧭 Intent:")
+                st.subheader("🧭 Intent")
                 st.info(intent)
             with col2:
-                st.subheader("📈 Sentiment:")
+                st.subheader("📈 Sentiment")
                 st.success(sentiment)
     
-    # Response generation
+    # Response Generation
     with st.spinner("Generating response..."):
         try:
             if st.session_state.pdf_file:
-                answer = process_pdf_and_ask(st.session_state.pdf_file, text)
+                answer = process_pdf_and_ask(st.session_state.pdf_file, st.session_state.transcribed_text)
             else:
-                answer = process_text_with_llm(text)
+                answer = process_text_with_llm(st.session_state.transcribed_text)
             
-            st.subheader("🤖 AI Response")
-            st.success(answer)
+            st.subheader("🤖 Response")
+            st.write(answer)
             
-            # Audio response
-            audio_bytes = text_to_speech(answer)
-            if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3")
+            # Audio Response
+            audio = text_to_speech(answer)
+            if audio:
+                st.audio(audio, format="audio/mp3")
                 
         except Exception as e:
-            st.error(f"Response generation failed: {str(e)}")
+            st.error(f"Error: {str(e)}")
         finally:
             st.session_state.processing = False
 
-# === Main UI ===
+# Main UI
 st.header("🎤 Voice Input")
-transcribed_text = recognize_speech_azure()
 
-if transcribed_text and transcribed_text != "No speech detected":
-    st.session_state.user_input = transcribed_text
+if st.button("🎙️ Start Recording") and not st.session_state.processing:
+    st.session_state.is_recording = True
+    st.session_state.transcribed_text = recognize_speech_azure()
+    st.rerun()
 
-st.text_area("Transcribed Text", 
-            value=st.session_state.user_input, 
-            height=100,
-            disabled=True)
-
-if st.session_state.user_input and not st.session_state.processing:
-    process_user_input(st.session_state.user_input)
+if st.session_state.transcribed_text:
+    st.text_area("Transcription", 
+                value=st.session_state.transcribed_text, 
+                height=100,
+                disabled=True)
+    process_query()
 
 # PDF Handling
-st.header("📄 PDF Upload (Optional)")
-pdf_file = st.file_uploader("Upload PDF", type=["pdf"])
+st.header("📄 Document Context")
+pdf_file = st.file_uploader("Upload PDF (optional)", type=["pdf"])
 if pdf_file:
     st.session_state.pdf_file = pdf_file
     st.success("PDF loaded for context!")
@@ -576,17 +570,3 @@ elif st.session_state.pdf_file:
     if st.button("Remove PDF"):
         st.session_state.pdf_file = None
         st.rerun()
-
-# Styling
-st.markdown("""
-<style>
-    .stButton>button {
-        width: 100%;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-    }
-    .stAudio {
-        width: 100%;
-    }
-</style>
-""", unsafe_allow_html=True)

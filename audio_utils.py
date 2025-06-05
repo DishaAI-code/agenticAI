@@ -91,91 +91,75 @@
 # updated code 
 
 import os
-import io
-import queue
 import numpy as np
-import requests
+import queue
 from dotenv import load_dotenv
 import azure.cognitiveservices.speech as speechsdk
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
+from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
 load_dotenv()
 
-class AudioProcessor(AudioProcessorBase):
+class AudioHandler:
     def __init__(self):
-        super().__init__()
         self.audio_queue = queue.Queue()
         self.speech_config = speechsdk.SpeechConfig(
             subscription=os.getenv("AZURE_SPEECH_KEY"),
             region=os.getenv("AZURE_SPEECH_REGION")
         )
         self.speech_config.speech_recognition_language = "en-US"
+        self.speech_config.set_property(
+            speechsdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "1500"
+        )
 
-    def recv(self, frame):
+    def process_audio(self, frame):
         self.audio_queue.put(frame.to_ndarray())
         return frame
 
 def recognize_speech_azure():
-    """Improved WebRTC implementation with direct Azure streaming"""
-    audio_processor = AudioProcessor()
+    """Auto-detecting speech recognition"""
+    handler = AudioHandler()
     
     webrtc_ctx = webrtc_streamer(
-        key="speech-to-text",
+        key="speech-recognition",
         mode=WebRtcMode.SENDONLY,
-        audio_processor_factory=AudioProcessor,
-        media_stream_constraints={"audio": True, "video": False},
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        audio_processor_factory=AudioHandler,
+        media_stream_constraints={
+            "audio": {
+                "echoCancellation": True,
+                "noiseSuppression": True,
+                "autoGainControl": True
+            },
+            "video": False
+        },
+        rtc_configuration={
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        }
     )
 
     if webrtc_ctx.audio_processor:
         try:
-            # Convert audio chunks to stream
-            audio_stream = io.BytesIO()
-            for _ in range(10):  # 10 second timeout
+            # Configure Azure recognizer
+            audio_input = speechsdk.audio.PushAudioInputStream()
+            audio_config = speechsdk.audio.AudioConfig(stream=audio_input)
+            recognizer = speechsdk.SpeechRecognizer(
+                speech_config=handler.speech_config,
+                audio_config=audio_config
+            )
+            
+            # Stream audio to Azure
+            while True:
                 try:
-                    chunk = webrtc_ctx.audio_processor.audio_queue.get(timeout=1)
-                    np.save(audio_stream, chunk, allow_pickle=False)
+                    audio_chunk = handler.audio_queue.get(timeout=5)
+                    audio_input.write(np.frombuffer(audio_chunk, dtype=np.int16).tobytes())
                 except queue.Empty:
                     break
             
-            if audio_stream.getbuffer().nbytes > 0:
-                audio_stream.seek(0)
-                audio_input = speechsdk.audio.PushAudioInputStream()
-                audio_config = speechsdk.audio.AudioConfig(stream=audio_input)
-                
-                recognizer = speechsdk.SpeechRecognizer(
-                    speech_config=audio_processor.speech_config,
-                    audio_config=audio_config
-                )
-                
-                result = recognizer.recognize_once_async().get()
-                if result.reason == speechsdk.ResultReason.RecognizedSpeech:
-                    return result.text
-                return "No speech detected"
+            # Get final result
+            result = recognizer.recognize_once_async().get()
+            if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+                return result.text
+            return "No speech detected"
+            
         except Exception as e:
             return f"Error: {str(e)}"
     return None
-
-def text_to_speech(text):
-    """More robust ElevenLabs implementation"""
-    try:
-        response = requests.post(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{os.getenv('ELEVENLABS_VOICE_ID')}",
-            headers={
-                "xi-api-key": os.getenv("ELEVENLABS_API_KEY"),
-                "Content-Type": "application/json"
-            },
-            json={
-                "text": text,
-                "voice_settings": {
-                    "stability": 0.75,
-                    "similarity_boost": 0.75
-                }
-            },
-            timeout=10
-        )
-        response.raise_for_status()
-        return response.content
-    except requests.exceptions.RequestException as e:
-        st.error(f"TTS Error: {str(e)}")
-        return None

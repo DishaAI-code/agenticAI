@@ -18,10 +18,10 @@ WORKDIR /app
 # Copy app files
 COPY . /app
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install git+https://github.com/stefanrmmr/streamlit_audio_recorder.git
+# Upgrade pip and install dependencies (including git+ URL)
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 # Expose Streamlit default port
 EXPOSE 8501
 

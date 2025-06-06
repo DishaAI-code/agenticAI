@@ -13,7 +13,8 @@ torch>=2.1.0
 transformers>=4.36.0
 webrtcvad>=2.0.10
 azure-cognitiveservices-speech>=1.34.1
-streamlit-audio-recorder>=0.0.2
+git+https://github.com/stefanrmmr/streamlit_audio_recorder.git
+
 
 
 # streamlit-audiorecorder

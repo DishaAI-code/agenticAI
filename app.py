@@ -323,263 +323,12 @@
 #current updated code in github
 
 
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-import streamlit as st
-
-from rag_utils import process_pdf_and_ask, process_text_with_llm  # Updated rag_utils function
-from audio_utils import recognize_speech_azure, text_to_speech
-from moderation_utils import moderate_text
-
-# === Load Keys ===
-load_dotenv()
-openai_key = os.getenv("OPENAI_API_KEY")
-eleven_key = os.getenv("ELEVENLABS_API_KEY")
-client = OpenAI(api_key=openai_key)
-
-st.set_page_config(page_title="Multimodal AI QnA")
-st.title("🎙️ Multimodal RAG  Voice Bot")
-
-def analyze_text(text):
-    """Function to analyze text for intent and sentiment"""
-    flagged, reasons = moderate_text(text)
-    if flagged is None:
-        st.error("Moderation failed.")
-        return None, None
-    elif flagged:
-        st.error("Blocked by moderation.")
-        st.info(f"Reason: {', '.join(reasons)}")
-        return None, None
-    
-    try:
-        # Intent analysis
-        intent_prompt = [
-            {"role": "system", "content": "You're an intent classifier."},
-            {"role": "user", "content": text}
-        ]
-        intent_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=intent_prompt
-        )
-        intent_label = intent_response.choices[0].message.content.strip()
-
-        # Sentiment analysis
-        sentiment_prompt = [
-            {"role": "system", "content": "You're a sentiment classifier."},
-            {"role": "user", "content": text}
-        ]
-        sentiment_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=sentiment_prompt
-        )
-        sentiment = sentiment_response.choices[0].message.content.strip()
-
-        return intent_label, sentiment
-
-    except Exception as e:
-        st.error(f"Analysis Error: {e}")
-        return None, None
-
-def process_user_input(text):
-    """Process user input through all required pipelines"""
-    if not text.strip():
-        return
-    
-    # 1. Always analyze sentiment and intent
-    st.subheader("💬 Message Analysis")
-    intent, sentiment = analyze_text(text)
-    
-    if intent is not None and sentiment is not None:
-        st.subheader("🧭 Intent:")
-        st.info(intent)
-        st.subheader("📈 Sentiment:")
-        st.success(sentiment)
-    
-    # 2. Process with RAG/LLM (works with or without PDF)
-    st.subheader("🤖 AI Response")
-    try:
-        with st.spinner("Generating response..."):
-            if 'pdf_file' in st.session_state and st.session_state.pdf_file is not None:
-                # Process with RAG if PDF exists
-                answer = process_pdf_and_ask(st.session_state.pdf_file, text)
-            else:
-                # Process with basic LLM if no PDF
-                answer = process_text_with_llm(text)
-            
-            st.success(answer)
-            st.audio(text_to_speech(answer), format="audio/mp3")
-    except Exception as e:
-        st.error(f"Response Error: {e}")
-
-# === Main Audio Input Section ===
-st.header("🎤 Voice Input")
-
-# Initialize session state
-if 'user_input' not in st.session_state:
-    st.session_state.user_input = ""
-    st.session_state.new_audio = False
-
-# Display area for transcribed text
-st.text_area("Transcribed Text", 
-            value=st.session_state.user_input, 
-            height=100, 
-            key="transcribed_display",
-            disabled=True)
-
-# Single audio recording button
-if st.button("🎙️ Start Recording (Azure)"):
-    st.info("Listening with Azure... (Speak now)")
-    transcribed_text = recognize_speech_azure()
-    
-    if transcribed_text and transcribed_text != "No speech recognized.":
-        st.session_state.user_input = transcribed_text
-        st.session_state.new_audio = True
-        st.rerun()
-    else:
-        st.warning("No speech detected or error occurred.")
-
-# === PDF Upload Section ===
-st.header("📄 PDF Upload (Optional)")
-pdf_file = st.file_uploader("Upload a PDF document", type=["pdf"], key="pdf_uploader")
-if pdf_file:
-    st.session_state.pdf_file = pdf_file
-    st.success("PDF loaded! Questions will use document context.")
-elif 'pdf_file' in st.session_state:
-    del st.session_state.pdf_file
-
-# Process audio input when received
-if st.session_state.new_audio:
-    st.session_state.new_audio = False
-    process_user_input(st.session_state.user_input)
-
-
-#4th updation 
-
-
 # import os
 # from dotenv import load_dotenv
 # from openai import OpenAI
 # import streamlit as st
-# from audio_utils import recognize_speech_azure, text_to_speech
-# from rag_utils import process_pdf_and_ask, process_text_with_llm
-# from moderation_utils import moderate_text
 
-# # === Load Keys ===
-# load_dotenv()
-# openai_key = os.getenv("OPENAI_API_KEY")
-# eleven_key = os.getenv("ELEVENLABS_API_KEY")
-# client = OpenAI(api_key=openai_key)
-
-# # === Your Original UI Setup ===
-# st.set_page_config(page_title="Multimodal AI QnA")
-# st.title("🎙️ Multimodal RAG Voice Bot")
-
-# def analyze_text(text):
-#     """Your original analysis function"""
-#     flagged, reasons = moderate_text(text)
-#     if flagged is None:
-#         st.error("Moderation failed.")
-#         return None, None
-#     elif flagged:
-#         st.error("Blocked by moderation.")
-#         st.info(f"Reason: {', '.join(reasons)}")
-#         return None, None
-    
-#     try:
-#         intent_prompt = [{"role": "system", "content": "You're an intent classifier."}, 
-#                         {"role": "user", "content": text}]
-#         intent_response = client.chat.completions.create(model="gpt-3.5-turbo", messages=intent_prompt)
-#         intent_label = intent_response.choices[0].message.content.strip()
-
-#         sentiment_prompt = [{"role": "system", "content": "You're a sentiment classifier."}, 
-#                           {"role": "user", "content": text}]
-#         sentiment_response = client.chat.completions.create(model="gpt-3.5-turbo", messages=sentiment_prompt)
-#         sentiment = sentiment_response.choices[0].message.content.strip()
-
-#         return intent_label, sentiment
-#     except Exception as e:
-#         st.error(f"Analysis Error: {e}")
-#         return None, None
-
-# def process_user_input(text):
-#     """Your original processing function"""
-#     if not text.strip():
-#         return
-    
-#     st.subheader("💬 Message Analysis")
-#     intent, sentiment = analyze_text(text)
-    
-#     if intent is not None and sentiment is not None:
-#         st.subheader("🧭 Intent:")
-#         st.info(intent)
-#         st.subheader("📈 Sentiment:")
-#         st.success(sentiment)
-    
-#     st.subheader("🤖 AI Response")
-#     try:
-#         with st.spinner("Generating response..."):
-#             if 'pdf_file' in st.session_state and st.session_state.pdf_file is not None:
-#                 answer = process_pdf_and_ask(st.session_state.pdf_file, text)
-#             else:
-#                 answer = process_text_with_llm(text)
-            
-#             st.success(answer)
-#             st.audio(text_to_speech(answer), format="audio/mp3")
-#     except Exception as e:
-#         st.error(f"Response Error: {e}")
-
-# # === Your Original UI Layout ===
-# st.header("🎤 Voice Input")
-
-# if 'user_input' not in st.session_state:
-#     st.session_state.update({
-#         'user_input': "",
-#         'new_audio': False,
-#         'pdf_file': None
-#     })
-
-# st.text_area("Transcribed Text", 
-#             value=st.session_state.user_input, 
-#             height=100, 
-#             key="transcribed_display",
-#             disabled=True)
-
-# # === Only Changed Part - Audio Recording ===
-# if st.button("🎙️ Start Recording"):
-#     st.info("Listening... Speak now (will auto-stop)")
-#     transcribed_text = recognize_speech_azure()
-    
-#     if transcribed_text and transcribed_text != "No speech recognized":
-#         st.session_state.user_input = transcribed_text
-#         st.session_state.new_audio = True
-#         st.rerun()
-#     else:
-#         st.warning("No speech detected. Please try again.")
-
-# # === Your Original PDF Handling ===
-# st.header("📄 PDF Upload (Optional)")
-# pdf_file = st.file_uploader("Upload a PDF document", type=["pdf"], key="pdf_uploader")
-# if pdf_file:
-#     st.session_state.pdf_file = pdf_file
-#     st.success("PDF loaded! Questions will use document context.")
-# elif 'pdf_file' in st.session_state:
-#     if st.button("Remove PDF"):
-#         st.session_state.pdf_file = None
-#         st.rerun()
-
-# if st.session_state.new_audio:
-#     st.session_state.new_audio = False
-#     process_user_input(st.session_state.user_input)
-
-
-# 5th update 
-
-# import os
-# from dotenv import load_dotenv
-# from openai import OpenAI
-# import streamlit as st
-# from rag_utils import process_pdf_and_ask, process_text_with_llm
+# from rag_utils import process_pdf_and_ask, process_text_with_llm  # Updated rag_utils function
 # from audio_utils import recognize_speech_azure, text_to_speech
 # from moderation_utils import moderate_text
 
@@ -590,7 +339,7 @@ if st.session_state.new_audio:
 # client = OpenAI(api_key=openai_key)
 
 # st.set_page_config(page_title="Multimodal AI QnA")
-# st.title("🎙️ Multimodal RAG Voice Bot")
+# st.title("🎙️ Multimodal RAG  Voice Bot")
 
 # def analyze_text(text):
 #     """Function to analyze text for intent and sentiment"""
@@ -678,12 +427,10 @@ if st.session_state.new_audio:
 #             key="transcribed_display",
 #             disabled=True)
 
-# # Audio recording via browser
-# audio_bytes = st.audio_input("Speak now...", key="audio_recorder")
-
-# if audio_bytes:
-#     st.info("Processing with Azure Speech Recognition...")
-#     transcribed_text = recognize_speech_azure(audio_bytes)
+# # Single audio recording button
+# if st.button("🎙️ Start Recording (Azure)"):
+#     st.info("Listening with Azure... (Speak now)")
+#     transcribed_text = recognize_speech_azure()
     
 #     if transcribed_text and transcribed_text != "No speech recognized.":
 #         st.session_state.user_input = transcribed_text
@@ -705,3 +452,151 @@ if st.session_state.new_audio:
 # if st.session_state.new_audio:
 #     st.session_state.new_audio = False
 #     process_user_input(st.session_state.user_input)
+
+
+#4th updation 
+
+
+import os
+import tempfile
+from dotenv import load_dotenv
+from openai import OpenAI
+import streamlit as st
+from streamlit_audio_recorder import audio_recorder
+
+from rag_utils import process_pdf_and_ask, process_text_with_llm
+from audio_utils import recognize_speech_azure, text_to_speech
+from moderation_utils import moderate_text
+
+# === Load Keys ===
+load_dotenv()
+openai_key = os.getenv("OPENAI_API_KEY")
+eleven_key = os.getenv("ELEVENLABS_API_KEY")
+client = OpenAI(api_key=openai_key)
+
+st.set_page_config(page_title="Multimodal AI QnA")
+st.title("🎙️ Multimodal RAG Voice Bot")
+
+
+def analyze_text(text):
+    """Function to analyze text for intent and sentiment"""
+    flagged, reasons = moderate_text(text)
+    if flagged is None:
+        st.error("Moderation failed.")
+        return None, None
+    elif flagged:
+        st.error("Blocked by moderation.")
+        st.info(f"Reason: {', '.join(reasons)}")
+        return None, None
+
+    try:
+        # Intent analysis
+        intent_prompt = [
+            {"role": "system", "content": "You're an intent classifier."},
+            {"role": "user", "content": text}
+        ]
+        intent_response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=intent_prompt
+        )
+        intent_label = intent_response.choices[0].message.content.strip()
+
+        # Sentiment analysis
+        sentiment_prompt = [
+            {"role": "system", "content": "You're a sentiment classifier."},
+            {"role": "user", "content": text}
+        ]
+        sentiment_response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=sentiment_prompt
+        )
+        sentiment = sentiment_response.choices[0].message.content.strip()
+
+        return intent_label, sentiment
+
+    except Exception as e:
+        st.error(f"Analysis Error: {e}")
+        return None, None
+
+
+def process_user_input(text):
+    """Process user input through all required pipelines"""
+    if not text.strip():
+        return
+
+    # 1. Always analyze sentiment and intent
+    st.subheader("💬 Message Analysis")
+    intent, sentiment = analyze_text(text)
+
+    if intent is not None and sentiment is not None:
+        st.subheader("🧭 Intent:")
+        st.info(intent)
+        st.subheader("📈 Sentiment:")
+        st.success(sentiment)
+
+    # 2. Process with RAG/LLM (works with or without PDF)
+    st.subheader("🤖 AI Response")
+    try:
+        with st.spinner("Generating response..."):
+            if 'pdf_file' in st.session_state and st.session_state.pdf_file is not None:
+                answer = process_pdf_and_ask(st.session_state.pdf_file, text)
+            else:
+                answer = process_text_with_llm(text)
+
+            st.success(answer)
+            st.audio(text_to_speech(answer), format="audio/mp3")
+    except Exception as e:
+        st.error(f"Response Error: {e}")
+
+
+# === Main Audio Input Section ===
+st.header("🎤 Voice Input")
+
+# Initialize session state
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ""
+    st.session_state.new_audio = False
+
+# Audio Recorder from browser
+audio_bytes = audio_recorder(
+    text="🎙️ Start Recording (Browser Mic)",
+    recording_color="#e8b62c",
+    neutral_color="#6aa36f",
+    icon_size="2x"
+)
+
+# Save and process audio if recorded
+if audio_bytes:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+        f.write(audio_bytes)
+        audio_path = f.name
+        st.success("Recording saved! Transcribing...")
+        transcribed_text = recognize_speech_azure(audio_path)
+
+        if transcribed_text and transcribed_text != "No speech recognized.":
+            st.session_state.user_input = transcribed_text
+            st.session_state.new_audio = True
+            st.rerun()
+        else:
+            st.warning("No speech detected or error occurred.")
+
+# Display area for transcribed text
+st.text_area("Transcribed Text",
+             value=st.session_state.user_input,
+             height=100,
+             key="transcribed_display",
+             disabled=True)
+
+# === PDF Upload Section ===
+st.header("📄 PDF Upload (Optional)")
+pdf_file = st.file_uploader("Upload a PDF document", type=["pdf"], key="pdf_uploader")
+if pdf_file:
+    st.session_state.pdf_file = pdf_file
+    st.success("PDF loaded! Questions will use document context.")
+elif 'pdf_file' in st.session_state:
+    del st.session_state.pdf_file
+
+# Process audio input when received
+if st.session_state.new_audio:
+    st.session_state.new_audio = False
+    process_user_input(st.session_state.user_input)

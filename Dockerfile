@@ -1,7 +1,7 @@
 # Use official Python image
 FROM python:3.10-slim
 
-# Install system dependencies including Git
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
     libportaudiocpp0 \
     portaudio19-dev \
     build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    libsndfile1 \
+    libgl1 \
+    cmake \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -18,7 +20,7 @@ WORKDIR /app
 # Copy app files
 COPY . /app
 
-# Upgrade pip and install dependencies (including git+ URL)
+# Upgrade pip and install dependencies
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 

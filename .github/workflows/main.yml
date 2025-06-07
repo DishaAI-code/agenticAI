@@ -1,37 +1,41 @@
-name: Deploy to Azure
+name: Trigger auto deployment for dishaai
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+    paths:
+      - '**'
+      - '.github/workflows/dishaai-AutoDeployTrigger-*.yml'
+
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
+    permissions: 
       id-token: write
       contents: read
-    timeout-minutes: 30
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Login to Azure
-      uses: azure/login@v1.4.6
-      with:
-        client-id: ${{ secrets.DISHAAI_AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.DISHAAI_AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.DISHAAI_AZURE_SUBSCRIPTION_ID }}
-    
-    - name: Build and push Docker image
-      run: |
-        docker build -t dishaai.azurecr.io/dishaai:${{ github.sha }} .
-        echo "${{ secrets.DISHAAI_REGISTRY_PASSWORD }}" | docker login dishaai.azurecr.io -u ${{ secrets.DISHAAI_REGISTRY_USERNAME }} --password-stdin
-        docker push dishaai.azurecr.io/dishaai:${{ github.sha }}
-    
-    - name: Deploy to Container Apps
-      uses: azure/container-apps-deploy-action@v2
-      with:
-        containerAppName: dishaai
-        resourceGroup: chatbot-rg
-        image: dishaai.azurecr.io/dishaai:${{ github.sha }}
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.DISHAAI_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.DISHAAI_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.DISHAAI_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: Dockerfile  # Replace if it's in subfolder
+          registryUrl: dishaai.azurecr.io
+          registryUsername: ${{ secrets.DISHAAI_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.DISHAAI_REGISTRY_PASSWORD }}
+          containerAppName: dishaai
+          resourceGroup: chatbot-rg
+          imageToBuild: dishaai.azurecr.io/dishaai:${{ github.sha }}

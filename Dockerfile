@@ -1,41 +1,29 @@
+# Use official Python image
 FROM python:3.10-slim
 
-# Install system dependencies
+# Install system dependencies including Git
 RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
     libportaudio2 \
-    libsm6 \
-    libxext6 \
-    gcc \
-    g++ \
-    make \
+    libportaudiocpp0 \
+    portaudio19-dev \
+    build-essential \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
-# Install packages in stages to reduce memory pressure
-COPY requirements.txt .
+# Copy app files
+COPY . /app
 
-# 1. First install small foundational packages
+# Upgrade pip and install dependencies (including git+ URL)
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir \
-    setuptools \
-    wheel \
-    numpy \
-    scipy
+    pip install --no-cache-dir -r requirements.txt
 
-# 2. Then install PyTorch CPU version
-RUN pip install --no-cache-dir \
-    torch==2.1.0 \
-    torchvision==0.16.0 \
-    torchaudio==2.1.0 \
-    --index-url https://download.pytorch.org/whl/cpu
-
-# 3. Finally install remaining requirements
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
+# Expose Streamlit default port
 EXPOSE 8501
+
+# Run the app
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -7,7 +7,6 @@ on:
     paths:
       - '**'
       - '.github/workflows/dishaai-AutoDeployTrigger-*.yml'
-
   workflow_dispatch:
 
 jobs:
@@ -32,10 +31,9 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}
-          dockerfilePath: Dockerfile  # Replace if it's in subfolder
+          dockerfilePath: Dockerfile
           registryUrl: dishaai.azurecr.io
           registryUsername: ${{ secrets.DISHAAI_REGISTRY_USERNAME }}
-          noCache: true
           registryPassword: ${{ secrets.DISHAAI_REGISTRY_PASSWORD }}
           containerAppName: dishaai
           resourceGroup: chatbot-rg

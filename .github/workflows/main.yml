@@ -35,6 +35,7 @@ jobs:
           dockerfilePath: Dockerfile  # Replace if it's in subfolder
           registryUrl: dishaai.azurecr.io
           registryUsername: ${{ secrets.DISHAAI_REGISTRY_USERNAME }}
+          noCache: true
           registryPassword: ${{ secrets.DISHAAI_REGISTRY_PASSWORD }}
           containerAppName: dishaai
           resourceGroup: chatbot-rg

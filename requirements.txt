@@ -17,7 +17,8 @@
 
 
 streamlit==1.29.0
-streamlit-webrtc==0.45.0   # ✅ pin this
+audio-recorder-streamlit==0.0.3  # ✅ added for mic input support
+streamlit-webrtc==0.45.0         # ✅ pinned for stability
 openai>=1.0.0
 python-dotenv>=1.0.1
 requests>=2.31.0

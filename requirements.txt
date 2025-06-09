@@ -1,19 +1,38 @@
-faiss-cpu>=1.7.4
-gtts>=2.3.2
-langchain>=0.1.0
-langchain-community>=0.0.20
+# faiss-cpu>=1.7.4
+# gtts>=2.3.2
+# langchain>=0.1.0
+# langchain-community>=0.0.20
+# openai>=1.0.0
+# python-dotenv>=1.0.1
+# pypdf>=3.16.4
+# requests>=2.31.0
+# scipy>=1.10.0
+# sentence-transformers>=2.2.2
+# streamlit>=1.30
+# torch>=2.1.0
+# transformers>=4.36.0
+# webrtcvad>=2.0.10
+# azure-cognitiveservices-speech>=1.34.1
+# git+https://github.com/stefanrmmr/streamlit-audio-recorder
+
+
+streamlit==1.29.0
+streamlit-webrtc==0.45.0   # ✅ pin this
 openai>=1.0.0
 python-dotenv>=1.0.1
-pypdf>=3.16.4
 requests>=2.31.0
-scipy>=1.10.0
+pypdf>=3.16.4
 sentence-transformers>=2.2.2
-streamlit>=1.30
-torch>=2.1.0
 transformers>=4.36.0
-webrtcvad>=2.0.10
+torch>=2.1.0
+scipy>=1.10.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+faiss-cpu>=1.7.4
 azure-cognitiveservices-speech>=1.34.1
-streamlit-audio-recorder>=1.0.1
+gtts>=2.3.2
+webrtcvad>=2.0.10
+
 
 
 

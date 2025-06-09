@@ -985,7 +985,7 @@ def main():
         st.success("📄 PDF loaded for RAG.")
 
     # Audio Recorder (browser-based)
-    audio_bytes = audio_recorder(text="🎙 Start Recording", pause_threshold=3.0)
+    audio_bytes = audio_recorder(text="🎙 Start Recording")
 
     if audio_bytes:
         # Save audio to file safely

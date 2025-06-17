@@ -165,7 +165,6 @@ def main():
     # Audio recording interface
     audio_bytes = audio_recorder(
         text="🎙 Start Recording",
-        pause_threshold=2.0,
         key="audio_recorder"
     )
 

@@ -2,7 +2,7 @@
 Voice Assistant with Sentiment Analysis, Intent Detection, and RAG Capabilities
 Streamlit application that processes voice input, generates AI responses, and maintains conversation history.
 """
-
+# app.py
 import os
 import time
 import streamlit as st

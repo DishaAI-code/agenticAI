@@ -48,6 +48,8 @@ with sentiment & intent detection, document-aware (RAG) query handling, and audi
 - Feedback in both visual and audible form.
 
 """
+
+
 import os
 import time
 import streamlit as st
@@ -93,7 +95,7 @@ def display_results():
         return
 
     # Display transcribed text
-    st.subheader("Transcribed Text")
+    st.subheader(" Transcribed Text")
     st.text_area("Your speech as text", 
                 value=current_input, 
                 height=100, 
@@ -110,10 +112,10 @@ def display_results():
     # Display analysis results in columns
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Intent")
+        st.subheader(" Intent")
         st.info(st.session_state.get("intent", "Pending..."))
     with col2:
-        st.subheader("Sentiment")
+        st.subheader(" Sentiment")
         st.success(st.session_state.get("sentiment", "Pending..."))
 
     # Generate AI response
@@ -127,14 +129,14 @@ def display_results():
         # Only update if we have a valid response
         if response and str(response).strip() != "":
             st.session_state.ai_response = response
-            print(f"New Response Generated: {response[:100]}...")
+            print(f" New Response Generated: {response[:100]}...")
 
             # Generate new audio
             audio_base64 = text_to_speech_elevenlabs(response)
             if audio_base64:
                 st.session_state.audio_base64 = audio_base64
                 st.session_state.audio_available = True
-                print("New audio generated")
+                print(" New audio generated")
             else:
                 st.session_state.audio_available = False
 
@@ -147,7 +149,7 @@ def display_results():
 
     # Display AI response
     if st.session_state.get("ai_response"):
-        st.subheader("AI Response")
+        st.subheader(" AI Response")
         st.write(st.session_state.ai_response)
 
         # Play audio if available
@@ -173,7 +175,7 @@ def clear_previous_results():
     for key in list(st.session_state.keys()):
         if key not in keys_to_keep:
             del st.session_state[key]
-    print("🧹 Cleared temporary session state")
+    print(" Cleared temporary session state")
 
 # --------------------------
 # UI SETUP
@@ -186,7 +188,7 @@ def page_setup():
         layout="centered",
         initial_sidebar_state="expanded"
     )
-    st.header("Voice Assistant with Sentiment + Intent + RAG")
+    st.header(" Voice Assistant with Sentiment + Intent + RAG")
 
 # --------------------------
 # MAIN APPLICATION
@@ -206,13 +208,13 @@ def main():
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
             f.write(uploaded_pdf.read())
             st.session_state.pdf_path = f.name
-        st.success("PDF loaded for RAG context")
+        st.success(" PDF loaded for RAG context")
     elif st.session_state.get("pdf_path"):
-        st.info("Using previously uploaded PDF for context")
+        st.info(" Using previously uploaded PDF for context")
 
     # Audio recording interface
     audio_bytes = audio_recorder(
-        text=" Start Recording",
+        text="🎙 Start Recording",
         key="audio_recorder"
     )
 

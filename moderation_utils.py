@@ -1,40 +1,34 @@
 
+"""
+📁 moderation_utils.py
 
-# from openai import OpenAI
-# import os
-# from dotenv import load_dotenv
+🎯 Purpose:
+Performs content moderation using OpenAI's Moderation API to ensure safe and appropriate user input
+before further processing by the language model.
 
-# load_dotenv()
-# client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-# def moderate_text(text: str):
-#     try:
-#         response = client.moderations.create(
-#             model="text-moderation-latest",
-#             input=text
-#         )
-#         output = response.results[0]
-#         flagged = output.flagged
+🔧 Technical Workflow:
 
-#         # Convert category_scores and categories to dicts
-#         category_scores = vars(output.category_scores)
-#         categories = vars(output.categories)
+1. 🔐 Environment Configuration:
+   - Loads `OPENAI_API_KEY` from `.env` using `dotenv`.
 
-#         violence_score = category_scores.get("violence", 0)
+2. ⚙️ Initialization:
+   - Instantiates an OpenAI client using the API key.
 
-#         if flagged or violence_score > 0.2:
-#             flagged_categories = [
-#                 k for k, v in categories.items()
-#                 if v or category_scores.get(k, 0) > 0.2
-#             ]
-#             return True, flagged_categories
+3. 🛡️ Moderation Process:
+   - Submits the input `text` to OpenAI’s moderation endpoint using the latest moderation model.
+   - Evaluates the `flagged` boolean and `category_scores` (e.g., violence, hate, self-harm).
 
-#         return False, []
-#     except Exception as e:
-#         print("Moderation API error:", e)
-#         return None, ["moderation_error"]
+4. 🚨 Flag Detection:
+   - If any category exceeds the safety threshold (e.g., `violence_score > 0.2`) or `flagged=True`,
+     the input is considered unsafe.
+   - Returns a list of flagged categories.
 
+5. ❌ Fail-Safe:
+   - If the moderation check fails due to API or runtime error, returns a fallback error reason.
 
-# moderation_utils.py
+✅ Returns:
+- Tuple `(is_flagged: bool, categories: List[str])`
+"""
 
 import os
 from dotenv import load_dotenv

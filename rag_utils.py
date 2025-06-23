@@ -1,73 +1,36 @@
-# import os
-# import tempfile
-# from langchain_community.document_loaders import PyPDFLoader
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-# from langchain.embeddings import HuggingFaceEmbeddings
-# from langchain.vectorstores import FAISS
-# from openai import OpenAI
-# from dotenv import load_dotenv
-# from conversational_memory import append_to_conversation, get_conversation_history
+"""
+📁 rag_utils.py
 
-# load_dotenv()
-# client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-# EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+🎯 Purpose:
+Implements Retrieval-Augmented Generation (RAG) using PDF documents for enhanced context-aware responses.
 
-# def format_history_for_openai(history):
-#     messages = []
-#     for turn in history:
-#         if "user" in turn:
-#             messages.append({"role": "user", "content": turn["user"]})
-#         if "assistant" in turn:
-#             messages.append({"role": "assistant", "content": turn["assistant"]})
-#     return messages
+🔧 Technical Workflow:
 
-# def process_text_with_llm(question):
-#     append_to_conversation("user", question)
+1. 📄 PDF Processing:
+   - Uses `PyPDFLoader` from LangChain to extract text from uploaded PDF files.
+   - Splits documents into semantically meaningful chunks via `RecursiveCharacterTextSplitter`.
 
-#     history = get_conversation_history()
-#     formatted_history = format_history_for_openai(history)
+2. 🔍 Embedding Generation:
+   - Converts text chunks into embeddings using HuggingFace's `all-MiniLM-L6-v2` model via `HuggingFaceEmbeddings`.
 
-#     response = client.chat.completions.create(
-#         model="gpt-3.5-turbo",
-#         messages=formatted_history + [{"role": "user", "content": question}]
-#     )
+3. 🧠 Vector Indexing:
+   - Stores document embeddings in a FAISS index to support fast vector similarity search.
 
-#     answer = response.choices[0].message.content.strip()
-#     append_to_conversation("assistant", answer)
-#     return answer
+4. 🧾 Prompt Construction:
+   - Retrieves top-k most similar document chunks to the user query.
+   - Constructs a system prompt including these chunks to give the LLM accurate and grounded context.
 
-# def process_pdf_and_ask(uploaded_pdf, question):
-#     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-#         tmp_file.write(uploaded_pdf.read())
-#         tmp_pdf_path = tmp_file.name
+5. 🤖 LLM Querying:
+   - Uses OpenAI's `gpt-3.5-turbo` to generate responses based on:
+     - Full chat history (retrieved via `get_conversation_history()`).
+     - Either plain question (in `process_text_with_llm()`) or document-grounded prompt (in `process_pdf_and_ask()`).
+   - Appends both the user's question and AI response to the session memory using `append_to_conversation()`.
 
-#     loader = PyPDFLoader(tmp_pdf_path)
-#     documents = loader.load()
-
-#     tokenizer = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-#     splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=50)
-#     docs = splitter.split_documents(documents)
-
-#     vectordb = FAISS.from_documents(docs, tokenizer)
-#     results = vectordb.similarity_search(question, k=3)
-#     context = "\n\n".join([doc.page_content for doc in results])
-
-#     prompt = f"""Based on the following document excerpts, answer the question at the end as clearly and accurately as possible.\n\nDocument Chunks:\n{context}\n\nQuestion: {question}\nAnswer:"""
-
-#     append_to_conversation("user", question)
-#     history = get_conversation_history()
-#     formatted_history = format_history_for_openai(history)
-
-#     response = client.chat.completions.create(
-#         model="gpt-3.5-turbo",
-#         messages=formatted_history + [{"role": "user", "content": prompt}]
-#     )
-
-#     answer = response.choices[0].message.content.strip()
-#     append_to_conversation("assistant", answer)
-#     return answer
-
-
+✅ Key Benefits:
+- Adds factual grounding to chatbot answers using external documents.
+- Maintains continuity and memory through conversational history.
+- Keeps responses concise, contextual, and semantically aligned.
+"""
 
 import os
 import tempfile

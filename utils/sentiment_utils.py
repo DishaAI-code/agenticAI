@@ -1,3 +1,30 @@
+"""
+📁 sentiment_utils.py
+
+🎯 Purpose:
+Analyzes user input text to extract **sentiment** and **intent** using OpenAI's GPT model.
+
+🔍 Technical Flow:
+
+1. 🔑 Environment Setup:
+   - Loads OpenAI API key securely from `.env` file using `dotenv`.
+
+2. 🤖 Sentiment Classification:
+   - Sends system prompt instructing GPT to classify sentiment strictly as:
+     → "Positive", "Negative", or "Neutral"
+
+3. 🧠 Intent Detection:
+   - Sends system prompt to GPT to classify user intent into a short 2–3 word label.
+     Examples: "Question", "Request", "Complaint", etc.
+
+4. 🔁 Output:
+   - Returns a tuple: `(sentiment, intent)`
+   - If any failure occurs, returns `(None, None)`
+
+✅ Used In:
+- `app.py` during result rendering to display emotional tone and intent.
+"""
+
 from openai import OpenAI
 import os
 from dotenv import load_dotenv

@@ -1,3 +1,18 @@
+"""
+# audio_utils.py
+
+Purpose:
+Provides audio capabilities: transcription and synthesis.
+
+Transcription (Speech-to-Text):
+- Uses Azure Speech SDK
+- Creates SpeechRecognizer with audio file and returns transcribed text.
+
+Text-to-Speech:
+- Uses ElevenLabs API
+- Constructs audio request with desired voice model and parameters.
+- Returns audio as base64-encoded string for playback in browser.
+"""
 import os
 import base64
 import requests

@@ -33,17 +33,37 @@ An intelligent **voice-based assistant** powered by OpenAI, Azure Speech-to-Text
 
 ## 📁 Folder Structure
 
-voice-assistant-chatbot/
-├── app.py # Main Streamlit app
-├── audio_utils.py # Handles STT (Azure) & TTS (ElevenLabs)
-├── conversational_memory.py # In-memory chat history logic
-├── context.py # CLI-based testing interface (optional)
-├── moderation_utils.py # OpenAI moderation integration
-├── rag_utils.py # PDF-based RAG pipeline
-├── sentiment_utils.py # Sentiment & intent analysis using GPT
-├── .env # Environment variables (excluded from Git)
-├── requirements.txt # Python dependencies
-└── README.md # Project documentation
+### Repository Structure
+
+- `app.py`  
+  Main Streamlit application that runs the chatbot interface.
+
+- `audio_utils.py`  
+  Handles speech-to-text (STT) via Azure and text-to-speech (TTS) via ElevenLabs.
+
+- `conversational_memory.py`  
+  Manages in-memory chat history to maintain context during conversations.
+
+- `context.py`  
+  Provides a CLI-based testing interface (optional for debugging or testing purposes).
+
+- `moderation_utils.py`  
+  Integrates OpenAI moderation tools to filter or analyze content.
+
+- `rag_utils.py`  
+  Implements a PDF-based Retrieval-Augmented Generation (RAG) pipeline for enhanced knowledge retrieval.
+
+- `sentiment_utils.py`  
+  Performs sentiment and intent analysis using GPT models.
+
+- `.env`  
+  Environment variables (sensitive data, excluded from Git).
+
+- `requirements.txt`  
+  Lists the Python dependencies required to run the project.
+
+- `README.md`  
+  Project documentation and overview.
 
 
 ---

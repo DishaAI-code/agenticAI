@@ -73,5 +73,24 @@ An intelligent **voice-based assistant** powered by OpenAI, Azure Speech-to-Text
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/voice-assistant-chatbot.git
-cd voice-assistant-chatbot
+git clone https://github.com/DishaAI-code/agenticAI
+
+
+### 2️⃣ Create .env File
+- Create a .env file in the root directory and paste the following:
+
+OPENAI_API_KEY=your_openai_key
+AZURE_SPEECH_KEY=your_azure_speech_key
+AZURE_SPEECH_REGION=your_azure_region
+ELEVENLABS_API_KEY=your_elevenlabs_key
+ELEVENLABS_VOICE_ID=your_voice_id  # Optional: uses default if not provided
+
+### 3️⃣ Install Dependencies
+- Ensure Python ≥ 3.9 is installed, then run:
+
+pip install -r requirements.txt
+
+### 4️⃣ Run the Application
+
+streamlit run app.py
+

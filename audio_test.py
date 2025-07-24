@@ -1,9 +1,6 @@
 import azure.cognitiveservices.speech as speechsdk
 import time
 
-# Configuration - match this with your Azure resource's region
-speech_key = "EFFjL6AtdjSFwNYXnHiw2JPtoxPnEo7pAPHy5U9RtUhBeiolmEdoJQQJ99BGACHYHv6XJ3w3AAAAACOGu903"
-speech_region = "eastus2"  # ✅ Correct region from your Azure portal
 
 # Create a speech configuration
 speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)

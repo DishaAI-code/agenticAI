@@ -1,41 +1,21 @@
+
+
+
 # """
 # 📁 rag_utils.py
 
-# 🎯 Purpose:
-# Implements Retrieval-Augmented Generation (RAG) using PDF documents for enhanced context-aware responses.
-
-# 🔧 Technical Workflow:
-
-# 1. 📄 PDF Processing:
-#    - Uses `PyPDFLoader` from LangChain to extract text from uploaded PDF files.
-#    - Splits documents into semantically meaningful chunks via `RecursiveCharacterTextSplitter`.
-
-# 2. 🔍 Embedding Generation:
-#    - Converts text chunks into embeddings using HuggingFace's `all-MiniLM-L6-v2` model via `HuggingFaceEmbeddings`.
-
-# 3. 🧠 Vector Indexing:
-#    - Stores document embeddings in a FAISS index to support fast vector similarity search.
-
-# 4. 🧾 Prompt Construction:
-#    - Retrieves top-k most similar document chunks to the user query.
-#    - Constructs a system prompt including these chunks to give the LLM accurate and grounded context.
-
-# 5. 🤖 LLM Querying:
-#    - Uses OpenAI's `gpt-3.5-turbo` to generate responses based on:
-#      - Full chat history (retrieved via `get_conversation_history()`).
-#      - Either plain question (in `process_text_with_llm()`) or document-grounded prompt (in `process_pdf_and_ask()`).
-#    - Appends both the user's question and AI response to the session memory using `append_to_conversation()`.
-
-# ✅ Key Benefits:
-# - Adds factual grounding to chatbot answers using external documents.
-# - Maintains continuity and memory through conversational history.
-# - Keeps responses concise, contextual, and semantically aligned.
+# 🎯 Updated Purpose:
+# Implements Retrieval-Augmented Generation (RAG) with:
+# - PDF document processing
+# - LPU course information integration
+# - LLM response generation
 # """
 
 # import os
 # import tempfile
 # from dotenv import load_dotenv
 # from openai import OpenAI
+# from typing import Optional
 
 # from langchain_community.document_loaders import PyPDFLoader
 # from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -58,7 +38,15 @@
 #             })
 #     return messages
 
-# def process_text_with_llm(question, chat_history=None):
+# def process_text_with_llm(question: str, chat_history: Optional[list] = None) -> str:
+#     """
+#     Process text query with LLM using conversation history
+#     Args:
+#         question: User's question
+#         chat_history: Optional conversation history
+#     Returns:
+#         Generated response
+#     """
 #     append_to_conversation("user", question)
     
 #     history = chat_history or get_conversation_history()
@@ -66,14 +54,23 @@
 
 #     response = client.chat.completions.create(
 #         model="gpt-3.5-turbo",
-#         messages=formatted_history + [{"role": "user", "content": question}]
+#         messages=formatted_history + [{"role": "user", "content": question}],
+#         temperature=0.7
 #     )
 
 #     answer = response.choices[0].message.content.strip()
 #     append_to_conversation("assistant", answer)
 #     return answer
 
-# def process_pdf_and_ask(uploaded_pdf, question):
+# def process_pdf_and_ask(uploaded_pdf, question: str) -> str:
+#     """
+#     Process PDF and generate response using RAG
+#     Args:
+#         uploaded_pdf: Uploaded PDF file
+#         question: User's question
+#     Returns:
+#         Generated response
+#     """
 #     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
 #         tmp_file.write(uploaded_pdf.read())
 #         tmp_pdf_path = tmp_file.name
@@ -96,23 +93,79 @@
 
 #     response = client.chat.completions.create(
 #         model="gpt-3.5-turbo",
-#         messages=formatted_history + [{"role": "user", "content": prompt}]
+#         messages=formatted_history + [{"role": "user", "content": prompt}],
+#         temperature=0.7
 #     )
 
 #     answer = response.choices[0].message.content.strip()
 #     append_to_conversation("assistant", answer)
 #     return answer
 
+# def generate_lpu_response(query: str, course_db) -> str:
+#     """
+#     Generate specialized response for LPU-related queries
+#     Args:
+#         query: User's query
+#         course_db: Course database instance
+#     Returns:
+#         Generated response
+#     """
+#     # Check for B.Tech related queries
+#     if any(kw in query.lower() for kw in ["btech", "engineering", "b.tech"]):
+#         courses = course_db.search_courses("btech engineering", 3)
+#         if courses:
+#             return generate_btech_response(courses)
+    
+#     # General LPU query
+#     return generate_general_response(query)
+
+# def generate_btech_response(courses: list) -> str:
+#     """
+#     Generate response for B.Tech queries
+#     Args:
+#         courses: List of relevant courses
+#     Returns:
+#         Generated response
+#     """
+#     response = client.chat.completions.create(
+#         model="gpt-3.5-turbo",
+#         messages=[
+#             {
+#                 "role": "system",
+#                 "content": f"""You're an LPU admission assistant. Respond to B.Tech queries with:
+# - Friendly Indian English
+# - Mention 2-3 key programs from: {courses}
+# - Keep response under 20 words
+# - End with a question"""
+#             },
+#             {"role": "user", "content": "What B.Tech programs does LPU offer?"}
+#         ],
+#         temperature=0.7
+#     )
+#     return response.choices[0].message.content
+
+# def generate_general_response(query: str) -> str:
+#     """
+#     Generate response for general queries
+#     Args:
+#         query: User's query
+#     Returns:
+#         Generated response
+#     """
+#     response = client.chat.completions.create(
+#         model="gpt-3.5-turbo",
+#         messages=[
+#             {"role": "system", "content": "You're an LPU admission counselor. Respond in friendly Indian English (1-2 sentences)."},
+#             {"role": "user", "content": query}
+#         ],
+#         temperature=0.7
+#     )
+#     return response.choices[0].message.content
 
 
 """
-📁 rag_utils.py
-
-🎯 Updated Purpose:
-Implements Retrieval-Augmented Generation (RAG) with:
-- PDF document processing
-- LPU course information integration
-- LLM response generation
+rag_utils.py
+Purpose: RAG and LLM processing with latency monitoring
 """
 
 import os
@@ -120,13 +173,12 @@ import tempfile
 from dotenv import load_dotenv
 from openai import OpenAI
 from typing import Optional
-
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-
 from conversational_memory import append_to_conversation, get_conversation_history
+from utils.api_monitor import monitor
 
 load_dotenv()
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -142,6 +194,7 @@ def format_history_for_openai(history):
             })
     return messages
 
+@monitor.track("LLM")
 def process_text_with_llm(question: str, chat_history: Optional[list] = None) -> str:
     """
     Process text query with LLM using conversation history
@@ -166,6 +219,7 @@ def process_text_with_llm(question: str, chat_history: Optional[list] = None) ->
     append_to_conversation("assistant", answer)
     return answer
 
+@monitor.track("RAG")
 def process_pdf_and_ask(uploaded_pdf, question: str) -> str:
     """
     Process PDF and generate response using RAG
@@ -205,6 +259,7 @@ def process_pdf_and_ask(uploaded_pdf, question: str) -> str:
     append_to_conversation("assistant", answer)
     return answer
 
+@monitor.track("LLM+LPU")
 def generate_lpu_response(query: str, course_db) -> str:
     """
     Generate specialized response for LPU-related queries

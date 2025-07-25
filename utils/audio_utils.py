@@ -131,7 +131,7 @@ def text_to_speech_elevenlabs(text: str):
         Base64 encoded audio data or None if failed
     """
     try:
-        xi_api_key = 'sk_9e6b414b970e8d78664918e65ace5b35352e8b433f6fb000'
+        xi_api_key = 'sk_f517a5ed8b9b1815c24e1e9cabe2dd1bd1e6844037597be7'
         voice_id =  "JBFqnCBsd6RMkjVDRZzb"
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 

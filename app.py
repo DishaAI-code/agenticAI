@@ -233,7 +233,7 @@ def main():
 
     # Audio recording interface
     audio_bytes = audio_recorder(
-        text="🎙 How can I help ?",
+        text="🎙 How May I help you ?",
         key="audio_recorder"
     )
     

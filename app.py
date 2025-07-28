@@ -83,7 +83,7 @@ def page_setup():
         layout="centered",
         initial_sidebar_state="expanded"
     )
-    st.header("Admission Voice Assistant")
+    st.header("Voice AI Agent")
 
 def display_results():
     """Display transcribed text, analysis results, and AI response"""
@@ -92,8 +92,8 @@ def display_results():
         return
 
     # Display transcribed text
-    st.subheader(" Transcribed Text")
-    st.text_area("Your speech as text", 
+    st.subheader(" Transcription ")
+    st.text_area(".", 
                 value=current_input, 
                 height=100, 
                 disabled=True,
@@ -148,7 +148,7 @@ def display_results():
 
     # Display response
     if st.session_state.get("ai_response"):
-        st.subheader(" Assistant Response")
+        st.subheader(" AI Agent Response")
         st.write(st.session_state.ai_response)
 
         # Play audio if available
@@ -222,21 +222,22 @@ def main():
     #         st.rerun()
 
     # PDF upload for RAG context
-    uploaded_pdf = st.file_uploader("Upload PDF (optional for context)", type=["pdf"])
-    if uploaded_pdf:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
-            f.write(uploaded_pdf.read())
-            st.session_state.pdf_path = f.name
-        st.success(" PDF loaded for RAG context")
-    elif st.session_state.get("pdf_path"):
-        st.info(" Using previously uploaded PDF for context")
+    # uploaded_pdf = st.file_uploader("Upload PDF (optional for context)", type=["pdf"])
+    # if uploaded_pdf:
+    #     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
+    #         f.write(uploaded_pdf.read())
+    #         st.session_state.pdf_path = f.name
+    #     st.success(" PDF loaded for RAG context")
+    # elif st.session_state.get("pdf_path"):
+    #     st.info(" Using previously uploaded PDF for context")
 
     # Audio recording interface
     audio_bytes = audio_recorder(
         text="🎙 Start Recording",
         key="audio_recorder"
     )
-
+    
+   
     # Process audio when recorded
     if audio_bytes:
 
@@ -244,6 +245,7 @@ def main():
         interaction_start = time.perf_counter()
         # Clear previous results
         keys_to_keep = ['conversation_history', 'course_db', 'course_status', 'pdf_path']
+       
         for key in list(st.session_state.keys()):
             if key not in keys_to_keep:
                 del st.session_state[key]
@@ -265,7 +267,7 @@ def main():
 
         # Validate transcription
         if not transcribed_text or str(transcribed_text).strip() == "":
-            st.warning(" No speech detected or transcription failed")
+            st.warning("No speech detected or transcription failed")
             return
 
         # Store and moderate input

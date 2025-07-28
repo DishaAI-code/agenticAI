@@ -233,14 +233,15 @@ def main():
 
     # Audio recording interface
     audio_bytes = audio_recorder(
-        text="🎙 Start Recording",
+        text="🎙 How can I help ?",
         key="audio_recorder"
     )
     
    
     # Process audio when recorded
     if audio_bytes:
-
+        if audio_bytes:
+           print("Audio Length is",len(audio_bytes)," bytes") 
          # Start timing the entire interaction
         interaction_start = time.perf_counter()
         # Clear previous results
@@ -287,7 +288,8 @@ def main():
         interaction_end = time.perf_counter()
         total_time_ms = (interaction_end - interaction_start) * 1000
         monitor.total_latency = total_time_ms  # Update the total latency
-
+        
+        
     # Display conversation history
     with st.expander(" Conversation History"):
         clean_history = [

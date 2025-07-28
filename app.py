@@ -79,7 +79,7 @@ if "course_db" not in st.session_state:
 def page_setup():
     """Configure the Streamlit page settings"""
     st.set_page_config(
-        page_title="LPU Voice Assistant",
+        page_title="Voice Assistant",
         layout="centered",
         initial_sidebar_state="expanded"
     )
@@ -148,7 +148,7 @@ def display_results():
 
     # Display response
     if st.session_state.get("ai_response"):
-        st.subheader(" AI Agent Response")
+        st.subheader("AI Agent Response")
         st.write(st.session_state.ai_response)
 
         # Play audio if available

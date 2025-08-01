@@ -17,7 +17,7 @@ import time
 import streamlit as st
 from openai import OpenAI
 # from moderation_utils import moderate_text
-from rag_utils import process_text_with_llm, process_pdf_and_ask, generate_lpu_response
+from rag_utils import process_text_with_llm, process_pdf_and_ask, generate_lpu_response,generate_general_response
 from audio_recorder_streamlit import audio_recorder
 import base64
 import tempfile
@@ -28,6 +28,7 @@ from conversational_memory import get_conversation_history
 from utils.scraper import scrape_lpu_courses
 from datetime import datetime
 from utils.api_monitor import monitor
+
 
 # ----------------------------------------------------------
 # ENVIRONMENT SETUP
@@ -125,7 +126,7 @@ def display_results():
             if any(kw in current_input.lower() for kw in ["lpu", "lovely", "university", "admission", "course"]):
                 response = generate_lpu_response(current_input, st.session_state.course_db)
             else:
-                response = process_text_with_llm(current_input)
+                response = generate_general_response(current_input)
 
         if response and str(response).strip() != "":
             st.session_state.ai_response = response

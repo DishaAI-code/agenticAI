@@ -17,3 +17,5 @@ venv/
 # Devcontainer (for GitHub Codespaces, optional)
 .devcontainer/
 
+# file to excude from git
+audio_test.py

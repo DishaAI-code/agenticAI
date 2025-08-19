@@ -223,14 +223,14 @@ def main():
     #         st.rerun()
 
     # PDF upload for RAG context
-    # uploaded_pdf = st.file_uploader("Upload PDF (optional for context)", type=["pdf"])
-    # if uploaded_pdf:
-    #     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
-    #         f.write(uploaded_pdf.read())
-    #         st.session_state.pdf_path = f.name
-    #     st.success(" PDF loaded for RAG context")
-    # elif st.session_state.get("pdf_path"):
-    #     st.info(" Using previously uploaded PDF for context")
+    uploaded_pdf = st.file_uploader("Upload PDF (optional for context)", type=["pdf"])
+    if uploaded_pdf:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
+            f.write(uploaded_pdf.read())
+            st.session_state.pdf_path = f.name
+        st.success(" PDF loaded for RAG context")
+    elif st.session_state.get("pdf_path"):
+        st.info(" Using previously uploaded PDF for context")
 
     # Audio recording interface
     audio_bytes = audio_recorder(

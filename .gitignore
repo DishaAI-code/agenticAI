@@ -19,3 +19,5 @@ venv/
 
 # file to excude from git
 audio_test.py
+server.py
+tracing_setup.py

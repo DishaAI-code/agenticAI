@@ -32,4 +32,4 @@ def get_ticket_status(ticket_id: str) -> str:
         return "There was an error fetching your ticket status."
 
 
-# get_ticket_status("ec89b530e1c74e44be2f1f5b569f6c79")
+get_ticket_status("ec89b530e1c74e44be2f1f5b569f6c79")

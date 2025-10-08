@@ -1,5 +1,4 @@
 
-
 """
 📁 app.py
 
@@ -10,6 +9,7 @@ Voice assistant with LPU course integration, combining:
 - LPU course information from web scraping
 - Conversational memory
 - RAG functionality
+- Langfuse tracing
 """
 
 import os
@@ -22,13 +22,14 @@ from audio_recorder_streamlit import audio_recorder
 import base64
 import tempfile
 from dotenv import load_dotenv
-# from utils.sentiment_utils import analyze_sentiment_intent
+from utils.sentiment_utils import analyze_sentiment_intent
 from utils.audio_utils import text_to_speech_elevenlabs, transcribe_audio
 from conversational_memory import get_conversation_history
-from utils.scraper import scrape_lpu_courses
+# from utils.scraper import scrape_lpu_courses
 from datetime import datetime
 from utils.api_monitor import monitor
-
+from langfuse import get_client, observe
+# from langfuse.decorators import langfuse_context
 
 # ----------------------------------------------------------
 # ENVIRONMENT SETUP
@@ -36,6 +37,19 @@ from utils.api_monitor import monitor
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# === Langfuse ===
+LANGFUSE_SECRET_KEY = "sk-lf-d5a4ee4d-c355-451d-aaae-5e61b4a8e84d"
+LANGFUSE_PUBLIC_KEY = "pk-lf-ab02e5cf-d477-42d0-b355-1599838ab141"
+LANGFUSE_HOST = "https://us.cloud.langfuse.com"
+
+# set env vars programmatically (so you don't need to export in shell)
+os.environ["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
+os.environ["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
+os.environ["LANGFUSE_HOST"] = LANGFUSE_HOST
+
+# initialize client
+langfuse = get_client()
 
 # ----------------------------------------------------------
 # LPU COURSE HANDLING
@@ -55,13 +69,13 @@ class CourseDatabase:
                                     (self.last_updated is None or 
                                      (datetime.now() - self.last_updated).days >= 7)):
             st.session_state.course_status = "Loading courses from LPU website..."
-            new_courses = scrape_lpu_courses()
-            if new_courses:
-                self.courses = new_courses
-                self.last_updated = datetime.now()
-                st.session_state.course_status = "Course data updated successfully"
-            else:
-                st.session_state.course_status = "Warning: Scraping failed - using existing data"
+            # new_courses = scrape_lpu_courses()
+            # if new_courses:
+            #     self.courses = new_courses
+            #     self.last_updated = datetime.now()
+            #     st.session_state.course_status = "Course data updated successfully"
+            # else:
+            #     st.session_state.course_status = "Warning: Scraping failed - using existing data"
     
     def search_courses(self, query, n_results=3):
         """Simple keyword-based course search"""
@@ -86,6 +100,7 @@ def page_setup():
     )
     st.header("Voice AI Agent")
 
+@observe
 def display_results():
     """Display transcribed text, analysis results, and AI response"""
     current_input = st.session_state.get("user_text", "")
@@ -101,22 +116,23 @@ def display_results():
                 key=f"transcribed_{int(time.time())}")
 
     # Analyze sentiment and intent
-    # if not st.session_state.get("sentiment") or not st.session_state.get("intent"):
-    #     with st.spinner("Analyzing sentiment and intent..."):
-    #         sentiment, intent = analyze_sentiment_intent(current_input)
-    #         st.session_state.sentiment = sentiment
-    #         st.session_state.intent = intent
+    if not st.session_state.get("sentiment") or not st.session_state.get("intent"):
+        with st.spinner("Analyzing sentiment and intent..."):
+            sentiment, intent = analyze_sentiment_intent(current_input)
+            st.session_state.sentiment = sentiment
+            st.session_state.intent = intent
 
     # Display analysis
-    # col1, col2 = st.columns(2)
-    # with col1:
-    #     st.subheader(" Intent")
-    #     st.info(st.session_state.get("intent", "Pending..."))
-    # with col2:
-    #     st.subheader(" Sentiment")
-    #     st.success(st.session_state.get("sentiment", "Pending..."))
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader(" Intent")
+        st.info(st.session_state.get("intent", "Pending..."))
+    with col2:
+        st.subheader(" Sentiment")
+        st.success(st.session_state.get("sentiment", "Pending..."))
 
     # Generate response
+    response = None
     with st.spinner("Generating response..."):
         if st.session_state.get("pdf_path"):
             with open(st.session_state.pdf_path, "rb") as f:
@@ -165,8 +181,6 @@ def display_results():
             """
             st.components.v1.html(audio_html, height=50)
             
-   
-
 def display_latency_metrics():
     """Display latency metrics in the UI"""
     st.sidebar.subheader("Performance Metrics")
@@ -214,14 +228,6 @@ def main():
     if "conversation_history" not in st.session_state:
         st.session_state.conversation_history = []
 
-    # Course status display
-    # with st.expander("LPU Course Database Status"):
-    #     st.session_state.course_db.update_courses()
-    #     st.write(st.session_state.get("course_status", "Course data loaded"))
-    #     if st.button("Refresh Course Data"):
-    #         st.session_state.course_db.update_courses()
-    #         st.rerun()
-
     # PDF upload for RAG context
     uploaded_pdf = st.file_uploader("Upload PDF (optional for context)", type=["pdf"])
     if uploaded_pdf:
@@ -238,58 +244,59 @@ def main():
         key="audio_recorder"
     )
     
-   
     # Process audio when recorded
     if audio_bytes:
-        if audio_bytes:
-           print("Audio Length is",len(audio_bytes)," bytes") 
-         # Start timing the entire interaction
-        interaction_start = time.perf_counter()
-        # Clear previous results
-        keys_to_keep = ['conversation_history', 'course_db', 'course_status', 'pdf_path']
-       
-        for key in list(st.session_state.keys()):
-            if key not in keys_to_keep:
-                del st.session_state[key]
-
-        # Save audio to temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-            f.write(audio_bytes)
-            temp_audio_path = f.name
-
-        # Transcribe audio
-        with st.spinner(" Processing your voice..."):
-            transcribed_text = transcribe_audio(temp_audio_path)
-
-        # Clean up temp file
-        try:
-            os.unlink(temp_audio_path)
-        except Exception as e:
-            print(f" Failed to delete temp file: {e}")
-
-        # Validate transcription
-        if not transcribed_text or str(transcribed_text).strip() == "":
-            st.warning("No speech detected or transcription failed")
-            return
-
-        # Store and moderate input
-        st.session_state.user_text = transcribed_text.strip()
-
-        # Content moderation
-        # flagged, reasons = moderate_text(transcribed_text)
-        # if flagged:
-        #     st.error(f" Blocked due to: {', '.join(reasons)}")
-        #     return
-
-        # Process and display results
-        display_results()
-            # Process and display results
-    
-        # Calculate total interaction time
-        interaction_end = time.perf_counter()
-        total_time_ms = (interaction_end - interaction_start) * 1000
-        monitor.total_latency = total_time_ms  # Update the total latency
+        print("Audio Length is",len(audio_bytes)," bytes") 
         
+        # Start parent trace for the entire interaction
+        with langfuse.start_as_current_span(name="voice_assistant_interaction") as trace:
+            interaction_start = time.perf_counter()
+            
+            # Clear previous results
+            keys_to_keep = ['conversation_history', 'course_db', 'course_status', 'pdf_path']
+            for key in list(st.session_state.keys()):
+                if key not in keys_to_keep:
+                    del st.session_state[key]
+
+            # Save audio to temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+                f.write(audio_bytes)
+                temp_audio_path = f.name
+
+            # Transcribe audio with Langfuse tracing
+            with langfuse.start_as_current_span(name="speech_to_text", input={"audio_length": len(audio_bytes)}) as span:
+                with st.spinner(" Processing your voice..."):
+                    transcribed_text = transcribe_audio(temp_audio_path)
+                    span.update(output={"transcribed_text": transcribed_text})
+
+            # Clean up temp file
+            try:
+                os.unlink(temp_audio_path)
+            except Exception as e:
+                print(f" Failed to delete temp file: {e}")
+
+            # Validate transcription
+            if not transcribed_text or str(transcribed_text).strip() == "":
+                st.warning("No speech detected or transcription failed")
+                return
+
+            # Store input
+            st.session_state.user_text = transcribed_text.strip()
+
+            # Process and display results
+            display_results()
+            
+            # Calculate total interaction time
+            interaction_end = time.perf_counter()
+            total_time_ms = (interaction_end - interaction_start) * 1000
+            monitor.total_latency = total_time_ms  # Update the total latency
+            
+            # Update trace with final metrics
+            trace.update(metadata={
+                "total_latency_ms": total_time_ms,
+                "transcribed_text": transcribed_text,
+                "response_length": len(st.session_state.get("ai_response", ""))
+            })
         
     # Display conversation history
     with st.expander(" Conversation History"):
@@ -306,11 +313,11 @@ def main():
                 st.markdown(f"** Assistant {idx+1}:** {turn.get('assistant', '').strip()}")
                 st.markdown("---")
     
-     # Display latency metrics
+    # Display latency metrics
     display_latency_metrics()
+    
+    # Flush Langfuse events at the end
+    langfuse.flush()
 
 if __name__ == "__main__":
     main()
-
-
-

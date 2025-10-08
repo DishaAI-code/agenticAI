@@ -39,9 +39,9 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # === Langfuse ===
-LANGFUSE_SECRET_KEY = "sk-lf-d5a4ee4d-c355-451d-aaae-5e61b4a8e84d"
-LANGFUSE_PUBLIC_KEY = "pk-lf-ab02e5cf-d477-42d0-b355-1599838ab141"
-LANGFUSE_HOST = "https://us.cloud.langfuse.com"
+LANGFUSE_SECRET_KEY =os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_PUBLIC_KEY =os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_HOST =os.getenv("LANGFUSE_HOST")
 
 # set env vars programmatically (so you don't need to export in shell)
 os.environ["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY

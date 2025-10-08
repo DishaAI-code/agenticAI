@@ -1,64 +1,60 @@
 
 
-streamlit==1.29.0
-audio-recorder-streamlit==0.0.3  # ✅ added for mic input support
-streamlit-webrtc==0.45.0         # ✅ pinned for stability
-openai>=1.0.0
-python-dotenv>=1.0.1
-requests>=2.31.0
-pypdf>=3.16.4
-sentence-transformers>=2.2.2
-transformers>=4.36.0
-torch>=2.1.0
-scipy>=1.10.0
-langchain>=0.1.0
-langchain-community>=0.0.20
-faiss-cpu>=1.7.4
-azure-cognitiveservices-speech>=1.34.1
-gtts>=2.3.2
-webrtcvad>=2.0.10
-beautifulsoup4
-pinecone
-langfuse==3.3.4
-
-
-
-
-
-# # Streamlit & Web UI
 # streamlit==1.29.0
-# audio-recorder-streamlit==0.0.3
-# streamlit-webrtc==0.45.0
-
-# # Core dependencies
-# openai==1.0.0
-# python-dotenv==1.0.1
-# requests==2.31.0
-# beautifulsoup4==4.12.2
-
-# # PDF / Text Processing
-# pypdf==3.16.4
-# sentence-transformers==2.2.2
-# transformers==4.36.0
-# torch==2.1.0
-# scipy==1.10.0
-# faiss-cpu==1.7.4
-
-# # Langchain & related
-# langchain==0.1.0
-# langchain-community==0.0.20
-# dataclasses-json==0.5.7
-# marshmallow==3.25.1
-
-# # Vector DB & Analytics
-# pinecone==5.0.0
+# audio-recorder-streamlit==0.0.3  # ✅ added for mic input support
+# streamlit-webrtc==0.45.0         # ✅ pinned for stability
+# openai>=1.0.0
+# python-dotenv>=1.0.1
+# requests>=2.31.0
+# pypdf>=3.16.4
+# sentence-transformers>=2.2.2
+# transformers>=4.36.0
+# torch>=2.1.0
+# scipy>=1.10.0
+# langchain>=0.1.0
+# langchain-community>=0.0.20
+# faiss-cpu>=1.7.4
+# azure-cognitiveservices-speech>=1.34.1
+# gtts>=2.3.2
+# webrtcvad>=2.0.10
+# beautifulsoup4
+# pinecone
 # langfuse==3.3.4
 
-# # Azure Speech & TTS
-# azure-cognitiveservices-speech==1.34.1
-# gtts==2.3.2
-# webrtcvad==2.0.10
 
-# # Other fixed dependencies
-# protobuf==4.25.4
-# multidict==6.0.4
+
+
+
+# --- Core app ---
+streamlit==1.31.1
+audio-recorder-streamlit==0.0.3
+streamlit-webrtc==0.45.0
+
+# --- AI stack ---
+openai==1.23.6
+langchain==0.1.16
+langchain-community==0.0.33
+langfuse==3.3.4
+pinecone
+# pinecone-client==3.2.2
+
+# --- ML / NLP ---
+torch==2.1.0
+transformers==4.37.2
+sentence-transformers==2.2.2
+scipy==1.11.4
+
+# --- Utils ---
+python-dotenv==1.0.1
+requests==2.31.0
+pypdf==3.17.0
+faiss-cpu==1.7.4
+beautifulsoup4==4.12.3
+gtts==2.3.2
+webrtcvad==2.0.10
+azure-cognitiveservices-speech==1.34.1
+
+# --- Fix known resolver loops ---
+protobuf==4.25.3
+opentelemetry-api==1.24.0
+importlib-metadata==6.8.0

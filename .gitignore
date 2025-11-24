@@ -21,3 +21,7 @@ venv/
 audio_test.py
 server.py
 tracing_setup.py
+
+backup_app.py
+backup_github_workflow_file.yml
+backup_requirement.txt

@@ -625,7 +625,7 @@ async def run_voice_agent(
     
     # servam ai for stt
     stt_instance = sarvam.STT(
-        language="hi-IN",
+        language="unknown",
         model="saarika:v2.5"
     )
 

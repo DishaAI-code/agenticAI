@@ -5,7 +5,7 @@ from typing import Optional
 import requests
 from openai import OpenAI
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from conversational_memory import append_to_conversation, get_conversation_history
 from utils.api_monitor import monitor
 from utils.get_ticket_status import get_ticket_status

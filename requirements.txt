@@ -32,11 +32,13 @@ opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 opentelemetry-exporter-otlp-proto-http>=1.20.0
 # ✅ ✅ ✅ RAG DEPENDENCIES (THIS FIXES YOUR CRASH)
-langchain==0.3.25
-langchain-community==0.3.24
-langchain-core==0.3.64
-langchain-text-splitters==0.3.8
-langsmith==0.3.45
-pinecone-client
+pypdf>=3.16.4
+sentence-transformers>=2.2.2
+transformers>=4.36.0
+torch>=2.1.0
+scipy>=1.10.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+pinecone
 openai
 requests

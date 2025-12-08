@@ -420,11 +420,11 @@ async def log_llm_interaction(user_input: str, llm_response: str, session_metada
 
     # Print to terminal
     print("=" * 80)
-    print("💬 LLM INTERACTION LOG")
+    print(" LLM INTERACTION LOG")
     print("=" * 80)
-    print(f"🎤 USER INPUT (LLM Prompt):\n{user_input}")
+    print(f" USER INPUT (LLM Prompt):\n{user_input}")
     print("-" * 80)
-    print(f"🤖 AGENT RESPONSE (LLM Output):\n{llm_response}")
+    print(f" AGENT RESPONSE (LLM Output):\n{llm_response}")
     print("=" * 80)
     
     logger.info("Logging to Langfuse")
@@ -675,18 +675,18 @@ async def run_voice_agent(
     logger.info(" GPT-4 LLM initialized")
 
     # Initialize TTS (OpenAI TTS with multilingual support)
-    logger.info(" Initializing OpenAI TTS...")
-    tts_instance = openai.TTS(
-        voice="alloy",
-        speed=1.0,
-    )
-    logger.info(" OpenAI TTS initialized")
+    # logger.info(" Initializing OpenAI TTS...")
+    # tts_instance = openai.TTS(
+    #     voice="alloy",
+    #     speed=1.0,
+    # )
+    # logger.info(" OpenAI TTS initialized")
     
     
-#     tts_instance=elevenlabs.TTS(
-#       voice_id="ODq5zmih8GrVes37Dizd",
-#       model="eleven_multilingual_v2"
-#    )
+    tts_instance=elevenlabs.TTS(
+      voice_id="ODq5zmih8GrVes37Dizd",
+      model="eleven_multilingual_v2"
+   )
     
     # Create multilingual agent
     logger.info(" Creating MultilingualAgent...")
@@ -767,58 +767,58 @@ async def run_voice_agent(
         vad_logger.info(" User started speaking...")
 
     # ============ RAG INTEGRATION: ON_USER_TURN_COMPLETED ============
-    @session.on("user_turn_completed")
-    def on_user_turn_completed(turn_ctx: ChatContext, new_message: ChatMessage) -> None:
-        """
-        Perform RAG lookup based on the user's most recent turn before LLM generates response.
-        This is the recommended LiveKit pattern for efficient RAG integration.
+    # @session.on("user_turn_completed")
+    # def on_user_turn_completed(turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+    #     """
+    #     Perform RAG lookup based on the user's most recent turn before LLM generates response.
+    #     This is the recommended LiveKit pattern for efficient RAG integration.
         
-        LiveKit Flow:
-        1. User speaks → STT converts to text → on_user_turn_completed fires
-        2. RAG retrieves context from Pinecone (pure retrieval, no LLM)
-        3. Context injected into chat as assistant message
-        4. LLM processes user message WITH injected context
-        5. LLM generates final response
-        """
-        async def _rag_lookup():
-            """Async wrapper for RAG lookup"""
-            try:
-                user_query = new_message.text_content
-                logger.info(f" [RAG] User turn completed: {user_query}")
+    #     LiveKit Flow:
+    #     1. User speaks → STT converts to text → on_user_turn_completed fires
+    #     2. RAG retrieves context from Pinecone (pure retrieval, no LLM)
+    #     3. Context injected into chat as assistant message
+    #     4. LLM processes user message WITH injected context
+    #     5. LLM generates final response
+    #     """
+    #     async def _rag_lookup():
+    #         """Async wrapper for RAG lookup"""
+    #         try:
+    #             user_query = new_message.text_content
+    #             logger.info(f" [RAG] User turn completed: {user_query}")
 
-                # Call RAG to retrieve context from Pinecone (PURE RETRIEVAL - NO LLM)
-                rag_context = await asyncio.to_thread(
-                    generate_rag_response,
-                    user_query,
-                    10  # top_k hits to retrieve
-                )
+    #             # Call RAG to retrieve context from Pinecone (PURE RETRIEVAL - NO LLM)
+    #             rag_context = await asyncio.to_thread(
+    #                 generate_rag_response,
+    #                 user_query,
+    #                 10  # top_k hits to retrieve
+    #             )
 
-                # If context was found, inject it into the chat turn
-                if rag_context and rag_context.strip():
-                    logger.info(f" [RAG] Found relevant context from Pinecone")
-                    logger.info(f" [RAG] Context inside the user turn completed session :\n{rag_context[:200]}...")  # Log first 200 chars
+    #             # If context was found, inject it into the chat turn
+    #             if rag_context and rag_context.strip():
+    #                 logger.info(f" [RAG] Found relevant context from Pinecone")
+    #                 logger.info(f" [RAG] Context inside the user turn completed session :\n{rag_context[:200]}...")  # Log first 200 chars
                     
-                    print("rag content is ",rag_context)
-                    # Inject RAG context as assistant message for LLM to use
-                    # LiveKit will pass this context to LLM along with user's question
-                    turn_ctx.add_message(
-                        role="assistant",
-                        content=(
-                            "Here is relevant context from the knowledge base that may help answer the user's question:\n\n"
-                            f"{rag_context}"
-                        )
-                    )
-                    logger.info(" [RAG] Context injected into chat turn for LLM processing")
-                else:
-                    logger.info(" [RAG] No relevant context found in Pinecone - LLM will respond based on general knowledge")
+    #                 print("rag content is ",rag_context)
+    #                 # Inject RAG context as assistant message for LLM to use
+    #                 # LiveKit will pass this context to LLM along with user's question
+    #                 turn_ctx.add_message(
+    #                     role="assistant",
+    #                     content=(
+    #                         "Here is relevant context from the knowledge base that may help answer the user's question:\n\n"
+    #                         f"{rag_context}"
+    #                     )
+    #                 )
+    #                 logger.info(" [RAG] Context injected into chat turn for LLM processing")
+    #             else:
+    #                 logger.info(" [RAG] No relevant context found in Pinecone - LLM will respond based on general knowledge")
 
-            except Exception as e:
-                logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
-                import traceback
-                traceback.print_exc()
+    #         except Exception as e:
+    #             logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
+    #             import traceback
+    #             traceback.print_exc()
 
-        # Schedule async RAG lookup as a task
-        asyncio.create_task(_rag_lookup())
+    #     # Schedule async RAG lookup as a task
+    #     asyncio.create_task(_rag_lookup())
 
     @session.on("conversation_item_added")
     def on_conversation_item_added(ev):
@@ -1222,3 +1222,14 @@ if __name__ == "__main__":
             prewarm_fnc=prewarm,
         )
     )
+    # mode="api"
+    # if mode=="api":
+    #     run_api_mode()
+    # else:
+    #     cli.run_app(
+    #         WorkerOptions(
+    #             entrypoint_fnc=entrypoint,
+    #             agent_name="outbound-caller",
+    #             prewarm_fnc=prewarm,
+    #         )
+    #     )

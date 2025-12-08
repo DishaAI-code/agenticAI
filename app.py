@@ -35,7 +35,7 @@ from langfuse import get_client,observe
 # For Whisper on Groq
 from groq import Groq
 from livekit.plugins import sarvam
-from rag_utils import process_pdf_and_ask, generate_general_response,query_pinecone,generate_rag_response
+# from rag_utils import process_pdf_and_ask, generate_general_response,query_pinecone,generate_rag_response
 from livekit.agents import ChatContext, ChatMessage
 
 # Langfuse SDK for better tracing
@@ -508,43 +508,43 @@ class MultilingualAgent(Agent):
         except Exception as e:
             vad_logger.error(f"❌ Error handling VAD event: {e}")
 
-    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
-        """
-        Perform RAG lookup based on the user's most recent turn before LLM generates response.
-        This is the recommended LiveKit pattern for efficient RAG integration.
-        """
-        try:
-            user_query = new_message.text_content
-            logger.info(f" [RAG] User turn completed: {user_query}")
+    # async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+    #     """
+    #     Perform RAG lookup based on the user's most recent turn before LLM generates response.
+    #     This is the recommended LiveKit pattern for efficient RAG integration.
+    #     """
+    #     try:
+    #         user_query = new_message.text_content
+    #         logger.info(f" [RAG] User turn completed: {user_query}")
 
-            # Call RAG to retrieve context from Pinecone
-            rag_response = await asyncio.to_thread(
-                generate_rag_response,
-                user_query,
-                10  # top_k hits to retrieve
-            )
+    #         # Call RAG to retrieve context from Pinecone
+    #         rag_response = await asyncio.to_thread(
+    #             generate_rag_response,
+    #             user_query,
+    #             10  # top_k hits to retrieve
+    #         )
 
-            if rag_response and rag_response != "No matching chunks found in Pinecone.":
-                logger.info(f" [RAG] Found relevant context from Pinecone")
-                logger.info(f" [RAG] Context:\n{rag_response[:200]}...")  # Log first 200 chars
+    #         if rag_response and rag_response != "No matching chunks found in Pinecone.":
+    #             logger.info(f" [RAG] Found relevant context from Pinecone")
+    #             logger.info(f" [RAG] Context:\n{rag_response[:200]}...")  # Log first 200 chars
                 
-                print("rag response in multigulanAgent class ",rag_response)
-                # Inject RAG context into the chat for the LLM to use
-                turn_ctx.add_message(
-                    role="assistant",
-                    content=(
-                        "The following is relevant context from the knowledge base that you should use to answer the user's question:\n\n"
-                        f"{rag_response}\n\n"
-                        "Use this context to provide an accurate answer. If the answer is not in this context, say you don't have that information."
-                    )
-                )
-            else:
-                logger.info(" [RAG] No relevant context found - LLM will respond generally")
+    #             print("rag response in multigulanAgent class ",rag_response)
+    #             # Inject RAG context into the chat for the LLM to use
+    #             turn_ctx.add_message(
+    #                 role="assistant",
+    #                 content=(
+    #                     "The following is relevant context from the knowledge base that you should use to answer the user's question:\n\n"
+    #                     f"{rag_response}\n\n"
+    #                     "Use this context to provide an accurate answer. If the answer is not in this context, say you don't have that information."
+    #                 )
+    #             )
+    #         else:
+    #             logger.info(" [RAG] No relevant context found - LLM will respond generally")
 
-        except Exception as e:
-            logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
-            import traceback
-            traceback.print_exc()
+    #     except Exception as e:
+    #         logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
+    #         import traceback
+    #         traceback.print_exc()
     
 
       
@@ -767,58 +767,58 @@ async def run_voice_agent(
         vad_logger.info(" User started speaking...")
 
     # ============ RAG INTEGRATION: ON_USER_TURN_COMPLETED ============
-    @session.on("user_turn_completed")
-    def on_user_turn_completed(turn_ctx: ChatContext, new_message: ChatMessage) -> None:
-        """
-        Perform RAG lookup based on the user's most recent turn before LLM generates response.
-        This is the recommended LiveKit pattern for efficient RAG integration.
+    # @session.on("user_turn_completed")
+    # def on_user_turn_completed(turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+    #     """
+    #     Perform RAG lookup based on the user's most recent turn before LLM generates response.
+    #     This is the recommended LiveKit pattern for efficient RAG integration.
         
-        LiveKit Flow:
-        1. User speaks → STT converts to text → on_user_turn_completed fires
-        2. RAG retrieves context from Pinecone (pure retrieval, no LLM)
-        3. Context injected into chat as assistant message
-        4. LLM processes user message WITH injected context
-        5. LLM generates final response
-        """
-        async def _rag_lookup():
-            """Async wrapper for RAG lookup"""
-            try:
-                user_query = new_message.text_content
-                logger.info(f" [RAG] User turn completed: {user_query}")
+    #     LiveKit Flow:
+    #     1. User speaks → STT converts to text → on_user_turn_completed fires
+    #     2. RAG retrieves context from Pinecone (pure retrieval, no LLM)
+    #     3. Context injected into chat as assistant message
+    #     4. LLM processes user message WITH injected context
+    #     5. LLM generates final response
+    #     """
+    #     async def _rag_lookup():
+    #         """Async wrapper for RAG lookup"""
+    #         try:
+    #             user_query = new_message.text_content
+    #             logger.info(f" [RAG] User turn completed: {user_query}")
 
-                # Call RAG to retrieve context from Pinecone (PURE RETRIEVAL - NO LLM)
-                rag_context = await asyncio.to_thread(
-                    generate_rag_response,
-                    user_query,
-                    10  # top_k hits to retrieve
-                )
+    #             # Call RAG to retrieve context from Pinecone (PURE RETRIEVAL - NO LLM)
+    #             rag_context = await asyncio.to_thread(
+    #                 generate_rag_response,
+    #                 user_query,
+    #                 10  # top_k hits to retrieve
+    #             )
 
-                # If context was found, inject it into the chat turn
-                if rag_context and rag_context.strip():
-                    logger.info(f" [RAG] Found relevant context from Pinecone")
-                    logger.info(f" [RAG] Context inside the user turn completed session :\n{rag_context[:200]}...")  # Log first 200 chars
+    #             # If context was found, inject it into the chat turn
+    #             if rag_context and rag_context.strip():
+    #                 logger.info(f" [RAG] Found relevant context from Pinecone")
+    #                 logger.info(f" [RAG] Context inside the user turn completed session :\n{rag_context[:200]}...")  # Log first 200 chars
                     
-                    print("rag content is ",rag_context)
-                    # Inject RAG context as assistant message for LLM to use
-                    # LiveKit will pass this context to LLM along with user's question
-                    turn_ctx.add_message(
-                        role="assistant",
-                        content=(
-                            "Here is relevant context from the knowledge base that may help answer the user's question:\n\n"
-                            f"{rag_context}"
-                        )
-                    )
-                    logger.info(" [RAG] Context injected into chat turn for LLM processing")
-                else:
-                    logger.info(" [RAG] No relevant context found in Pinecone - LLM will respond based on general knowledge")
+    #                 print("rag content is ",rag_context)
+    #                 # Inject RAG context as assistant message for LLM to use
+    #                 # LiveKit will pass this context to LLM along with user's question
+    #                 turn_ctx.add_message(
+    #                     role="assistant",
+    #                     content=(
+    #                         "Here is relevant context from the knowledge base that may help answer the user's question:\n\n"
+    #                         f"{rag_context}"
+    #                     )
+    #                 )
+    #                 logger.info(" [RAG] Context injected into chat turn for LLM processing")
+    #             else:
+    #                 logger.info(" [RAG] No relevant context found in Pinecone - LLM will respond based on general knowledge")
 
-            except Exception as e:
-                logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
-                import traceback
-                traceback.print_exc()
+    #         except Exception as e:
+    #             logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
+    #             import traceback
+    #             traceback.print_exc()
 
-        # Schedule async RAG lookup as a task
-        asyncio.create_task(_rag_lookup())
+    #     # Schedule async RAG lookup as a task
+    #     asyncio.create_task(_rag_lookup())
 
     @session.on("conversation_item_added")
     def on_conversation_item_added(ev):

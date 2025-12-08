@@ -1,5 +1,6 @@
 livekit>=1.0.12
 livekit-agents[sarvam]>=1.2.17
+livekit-agents[elevenlabs]>=1.2.0
 livekit-api>=1.0.5
 livekit-protocol>=1.0.4
 

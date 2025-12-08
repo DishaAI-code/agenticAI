@@ -26,3 +26,12 @@ backup_app.py
 backup_github_workflow_file.yml
 backup_requirement.txt
 backup_dockerfile
+26_11_app.py
+RAG_INTEGRATION_SUMMARY.md
+AG_PATTERN_CORRECTED.md
+RAG_QUICK_START.md
+custom_google_search.py
+permamnent_vectordb.py
+test_elevenlabs.py
+test_rag.py
+RAG_PATTERN_CORRECTED.md

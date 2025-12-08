@@ -18,7 +18,7 @@ from livekit.agents import (
     Agent,
     AgentSession,
 )
-
+from livekit.plugins import elevenlabs
 from livekit.agents.telemetry import set_tracer_provider
 from livekit.plugins import openai, silero
 from fastapi import FastAPI, HTTPException
@@ -35,6 +35,8 @@ from langfuse import get_client,observe
 # For Whisper on Groq
 from groq import Groq
 from livekit.plugins import sarvam
+from rag_utils import process_pdf_and_ask, generate_general_response,query_pinecone,generate_rag_response
+from livekit.agents import ChatContext, ChatMessage
 
 # Langfuse SDK for better tracing
 try:
@@ -313,7 +315,7 @@ def setup_langfuse(
 
 
 # ============ LANGUAGE DETECTION WITH WHISPER (GROQ) ============
-
+# no use 315-408
 class LanguageDetector:
     """Handles language detection using Whisper on Groq"""
     
@@ -475,7 +477,7 @@ async def log_llm_interaction(user_input: str, llm_response: str, session_metada
 
 class MultilingualAgent(Agent):
     """
-    Extended Agent with multilingual language detection support
+    Extended Agent with multilingual language detection support and RAG integration
     """
     
     def __init__(self, language_detector: LanguageDetector, *args, **kwargs):
@@ -483,7 +485,7 @@ class MultilingualAgent(Agent):
         self.language_detector = language_detector
         self.current_stt_language = "en-US"  # Start with English
         self._vad_frames_buffer = []
-        vad_logger.info("✅ MultilingualAgent initialized")
+        vad_logger.info("✅ MultilingualAgent initialized with RAG support")
     
     async def handle_vad_event(self, ev: vad.VADEvent):
         """Handle VAD events for language detection"""
@@ -505,32 +507,67 @@ class MultilingualAgent(Agent):
             
         except Exception as e:
             vad_logger.error(f"❌ Error handling VAD event: {e}")
+
+    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+        """
+        Perform RAG lookup based on the user's most recent turn before LLM generates response.
+        This is the recommended LiveKit pattern for efficient RAG integration.
+        """
+        try:
+            user_query = new_message.text_content
+            logger.info(f" [RAG] User turn completed: {user_query}")
+
+            # Call RAG to retrieve context from Pinecone
+            rag_response = await asyncio.to_thread(
+                generate_rag_response,
+                user_query,
+                10  # top_k hits to retrieve
+            )
+
+            if rag_response and rag_response != "No matching chunks found in Pinecone.":
+                logger.info(f" [RAG] Found relevant context from Pinecone")
+                logger.info(f" [RAG] Context:\n{rag_response[:200]}...")  # Log first 200 chars
+                
+                print("rag response in multigulanAgent class ",rag_response)
+                # Inject RAG context into the chat for the LLM to use
+                turn_ctx.add_message(
+                    role="assistant",
+                    content=(
+                        "The following is relevant context from the knowledge base that you should use to answer the user's question:\n\n"
+                        f"{rag_response}\n\n"
+                        "Use this context to provide an accurate answer. If the answer is not in this context, say you don't have that information."
+                    )
+                )
+            else:
+                logger.info(" [RAG] No relevant context found - LLM will respond generally")
+
+        except Exception as e:
+            logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
+            import traceback
+            traceback.print_exc()
     
 
       
 # ============ SYSTEM PROMPTS ============
 
-_default_instructions = """You are a multilingual AI voice assistant for Autodesk. Follow these rules strictly:
+_default_instructions = """
+You are a multilingual AI voice assistant.
 
-LANGUAGE DETECTION:
-1. The system automatically detects the language you're speaking using advanced speech recognition.
-2. You will ALWAYS respond in the EXACT SAME LANGUAGE as the user's speech.
-3. When the user switches language mid-conversation, immediately switch to that language.
+LANGUAGE RULES:
+1. Detect the language the user speaks and ALWAYS reply in the SAME language.
+2. If the user switches language, switch your language too.
 
-SUPPORTED LANGUAGES:
-- English
-- Hindi (हिंदी)
-- Gujarati (ગુજરાતી)
-- Kannada (ಕನ್ನಡ)
+RAG USAGE (VERY IMPORTANT):
+3. If RAG document context is provided, ALWAYS use it to answer.
+4. Use document-based answers FIRST. If you are not found anything realted query related to document just say sorry didnt know anything realted to it .
+5. You are NOT limited to Autodesk only. You can answer ANY relevant topic.
 
 CONVERSATION STYLE:
-4. Keep responses short (1-3 sentences), friendly, and conversational.
-5. Do not repeat the welcome greeting - it has already been said.
-6. You are calling from Autodesk to assist the user with product information and queries.
-7. Allow the user to end the conversation naturally.
-8. Use natural, colloquial expressions appropriate for phone conversations in each language.
+6. Responses must be SHORT (1–3 sentences), friendly, and conversational.
+7. Do NOT repeat the welcome greeting.
+8. If you do not know the answer and no document context exists, say you don’t know and ask a follow-up.
+"""
 
-IMPORTANT: Respond in the user's detected language. The system has already identified it for you."""
 
 _greeting_message = "Hello, I am your AI assistant calling from Autodesk. I can understand and speak English, Hindi, Gujarati, and Kannada. How can I help you today?"
 
@@ -564,7 +601,7 @@ async def entrypoint(ctx: JobContext):
     )
 
     participant = await ctx.wait_for_participant(identity=user_identity)
-    logger.info(f"✅ Participant joined: {user_identity}")
+    logger.info(f" Participant joined: {user_identity}")
     
     await run_voice_agent(ctx, participant, _default_instructions, _greeting_message)
 
@@ -576,7 +613,7 @@ async def entrypoint(ctx: JobContext):
         call_status = participant.attributes.get("sip.callStatus")
         
         if call_status == "active":
-            logger.info("✅ User has picked up - call is active")
+            logger.info(" User has picked up - call is active")
             return
         elif call_status == "automation":
             logger.debug(" Call status: automation")
@@ -589,7 +626,7 @@ async def entrypoint(ctx: JobContext):
             
         await asyncio.sleep(0.1)
 
-    logger.info("⏱️  Session timed out, exiting job")
+    logger.info("  Session timed out, exiting job")
     ctx.shutdown()
 
 
@@ -621,7 +658,7 @@ async def run_voice_agent(
     #     api_key=deepgram_api_key,
     # )
     
-    # stt_logger.info("✅ Deepgram STT initialized with language: en-US (default)")
+    # stt_logger.info(" Deepgram STT initialized with language: en-US (default)")
     
     # servam ai for stt
     stt_instance = sarvam.STT(
@@ -644,7 +681,13 @@ async def run_voice_agent(
         speed=1.0,
     )
     logger.info(" OpenAI TTS initialized")
-
+    
+    
+#     tts_instance=elevenlabs.TTS(
+#       voice_id="ODq5zmih8GrVes37Dizd",
+#       model="eleven_multilingual_v2"
+#    )
+    
     # Create multilingual agent
     logger.info(" Creating MultilingualAgent...")
     assistant = MultilingualAgent(
@@ -675,6 +718,7 @@ async def run_voice_agent(
 
     @session.on("user_speech_committed")
     def on_user_speech_committed(event):
+        logger.info("we are inside user_speech_committed event")
         """Handle user speech with proper event structure - FIXED VERSION"""
         try:
             logger.info("you are inside user_speech_committed")
@@ -708,7 +752,7 @@ async def run_voice_agent(
                 # Fallback for different event structure
                 transcript = event.text
                 stt_logger.info("=" * 80)
-                stt_logger.info(f"👤 USER SPEECH (Fallback): {transcript}")
+                stt_logger.info(f" USER SPEECH (Fallback): {transcript}")
                 stt_logger.info("=" * 80)
                 
         except Exception as e:
@@ -718,9 +762,74 @@ async def run_voice_agent(
 
     @session.on("user_started_speaking")
     def on_user_started_speaking():
+        logger.info("we are inside user started speaking event")
         """Log when user starts speaking"""
-        vad_logger.info("🎤 User started speaking...")
+        vad_logger.info(" User started speaking...")
 
+    # ============ RAG INTEGRATION: ON_USER_TURN_COMPLETED ============
+    @session.on("user_turn_completed")
+    def on_user_turn_completed(turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+        """
+        Perform RAG lookup based on the user's most recent turn before LLM generates response.
+        This is the recommended LiveKit pattern for efficient RAG integration.
+        
+        LiveKit Flow:
+        1. User speaks → STT converts to text → on_user_turn_completed fires
+        2. RAG retrieves context from Pinecone (pure retrieval, no LLM)
+        3. Context injected into chat as assistant message
+        4. LLM processes user message WITH injected context
+        5. LLM generates final response
+        """
+        async def _rag_lookup():
+            """Async wrapper for RAG lookup"""
+            try:
+                user_query = new_message.text_content
+                logger.info(f" [RAG] User turn completed: {user_query}")
+
+                # Call RAG to retrieve context from Pinecone (PURE RETRIEVAL - NO LLM)
+                rag_context = await asyncio.to_thread(
+                    generate_rag_response,
+                    user_query,
+                    10  # top_k hits to retrieve
+                )
+
+                # If context was found, inject it into the chat turn
+                if rag_context and rag_context.strip():
+                    logger.info(f" [RAG] Found relevant context from Pinecone")
+                    logger.info(f" [RAG] Context inside the user turn completed session :\n{rag_context[:200]}...")  # Log first 200 chars
+                    
+                    print("rag content is ",rag_context)
+                    # Inject RAG context as assistant message for LLM to use
+                    # LiveKit will pass this context to LLM along with user's question
+                    turn_ctx.add_message(
+                        role="assistant",
+                        content=(
+                            "Here is relevant context from the knowledge base that may help answer the user's question:\n\n"
+                            f"{rag_context}"
+                        )
+                    )
+                    logger.info(" [RAG] Context injected into chat turn for LLM processing")
+                else:
+                    logger.info(" [RAG] No relevant context found in Pinecone - LLM will respond based on general knowledge")
+
+            except Exception as e:
+                logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
+                import traceback
+                traceback.print_exc()
+
+        # Schedule async RAG lookup as a task
+        asyncio.create_task(_rag_lookup())
+
+    @session.on("conversation_item_added")
+    def on_conversation_item_added(ev):
+        """Log conversation items for debugging and tracing"""
+        item = ev.item
+        role = item.role
+        text = item.text_content
+        
+        logger.info(f"📨 [CONVERSATION] {role.upper()}: {text[:100]}...")  # Log first 100 chars
+
+    
     @session.on("user_stopped_speaking")
     def on_user_stopped_speaking(ev: vad.VADEvent):
         """Handle user stopped speaking for language detection"""
@@ -731,6 +840,7 @@ async def run_voice_agent(
     @session.on("agent_speech_committed")
     def on_agent_speech_committed(event):
         """Handle agent speech responses - FIXED VERSION"""
+        logger.info("we are inside agent_sppech_commited event")
         try:
             if hasattr(event, 'text'):
                 agent_text = event.text
@@ -769,6 +879,7 @@ async def run_voice_agent(
     # Debug handler to see all events
     @session.on("any")
     def on_any_event(event_name, *args):
+        logger.info("we are inside any keyword session ")
         """Debug all events - helps identify what's firing"""
         if event_name not in ["audio_stream"]:  # Skip noisy audio events
             logger.debug(f" EVENT FIRED: {event_name} - Args: {len(args)}")
@@ -1104,10 +1215,20 @@ def run_api_mode():
 
 
 if __name__ == "__main__":
-    cli.run_app(
-        WorkerOptions(
-            entrypoint_fnc=entrypoint,
-            agent_name="outbound-caller",
-            prewarm_fnc=prewarm,
-        )
+    mode = "api"  # default mode = agent
+
+    if mode == "api":
+        run_api_mode() 
+    else:
+        # Runs API + Agen
+        cli.run_app(
+            WorkerOptions(
+                entrypoint_fnc=entrypoint,
+                agent_name="outbound-caller",
+                prewarm_fnc=prewarm,
+            )
     )
+
+
+
+

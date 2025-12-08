@@ -1215,20 +1215,6 @@ def run_api_mode():
 
 
 if __name__ == "__main__":
-    # mode = "api"  # default mode = agent
-
-    # if mode == "api":
-    #     run_api_mode() 
-    # else:
-    #     # Runs API + Agen
-    #     cli.run_app(
-    #         WorkerOptions(
-    #             entrypoint_fnc=entrypoint,
-    #             agent_name="outbound-caller",
-    #             prewarm_fnc=prewarm,
-    #         )
-    # )
-    
     cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,

@@ -144,7 +144,7 @@ def query_pinecone(text: str, top_k: int = TOP_K):
 #     return response.choices[0].message.content
 
 
-
+# kgnokfnga 
 
 # def generate_rag_response(question: str, hits=None):
 #     """

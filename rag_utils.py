@@ -17,11 +17,11 @@ from dotenv import load_dotenv
 # ------------------------
 load_dotenv()
 
-OPENAI_API_KEY=os.environ.get("OPENAI_API_KEY")
-PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_ENV = os.environ.get("PINECONE_CLOUD", "aws")
-PINECONE_REGION = os.environ.get("PINECONE_REGION", "us-east-1")
-PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "dishaai")
+OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_ENV = os.getenv("PINECONE_CLOUD", "aws")
+PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
+PINECONE_INDEX = os.getenv("PINECONE_INDEX", "dishaai")
 
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY is not set in environment")

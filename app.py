@@ -675,18 +675,18 @@ async def run_voice_agent(
     logger.info(" GPT-4 LLM initialized")
 
     # Initialize TTS (OpenAI TTS with multilingual support)
-    # logger.info(" Initializing OpenAI TTS...")
-    # tts_instance = openai.TTS(
-    #     voice="alloy",
-    #     speed=1.0,
-    # )
-    # logger.info(" OpenAI TTS initialized")
+    logger.info(" Initializing OpenAI TTS...")
+    tts_instance = openai.TTS(
+        voice="alloy",
+        speed=1.0,
+    )
+    logger.info(" OpenAI TTS initialized")
     
     
-    tts_instance=elevenlabs.TTS(
-      voice_id="ODq5zmih8GrVes37Dizd",
-      model="eleven_multilingual_v2"
-   )
+#     tts_instance=elevenlabs.TTS(
+#       voice_id="ODq5zmih8GrVes37Dizd",
+#       model="eleven_multilingual_v2"
+#    )
     
     # Create multilingual agent
     logger.info(" Creating MultilingualAgent...")

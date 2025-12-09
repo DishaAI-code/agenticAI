@@ -37,3 +37,6 @@ test_elevenlabs.py
 test_rag.py
 RAG_PATTERN_CORRECTED.md
 conversational_memory.py
+
+# utils folder 
+utils/

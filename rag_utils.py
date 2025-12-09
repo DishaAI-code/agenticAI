@@ -4,10 +4,9 @@ import uuid
 from typing import Optional
 import requests
 from openai import OpenAI
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from utils.api_monitor import monitor
-from utils.get_ticket_status import get_ticket_status
+# from langchain_community.document_loaders import PyPDFLoader
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from pinecone import Pinecone
 from dotenv import load_dotenv
 
@@ -63,68 +62,68 @@ TOP_K = 4
 SIMILARITY_SCORE_THRESHOLD = 0.2
 
 
-def check_if_pdf_exists(file_id: str) -> bool:
-    """Check if PDF chunks already embedded by file_id"""
-    try:
-        results = index.query(
-            vector=[0.0] * EMBED_DIM,
-            top_k=1,
-            filter={"file_id": {"$eq": file_id}}
-        )
-        return len(results.get("matches", [])) > 0
-    except:
-        return False
+# def check_if_pdf_exists(file_id: str) -> bool:
+#     """Check if PDF chunks already embedded by file_id"""
+#     try:
+#         results = index.query(
+#             vector=[0.0] * EMBED_DIM,
+#             top_k=1,
+#             filter={"file_id": {"$eq": file_id}}
+#         )
+#         return len(results.get("matches", [])) > 0
+#     except:
+#         return False
 
 
-def chunk_pdf_to_text(pdf_path: str) -> list:
-    loader = PyPDFLoader(pdf_path)
-    docs = loader.load()
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
-    )
-    chunks = []
-    for doc in docs:
-        for chunk in splitter.split_text(doc.page_content):
-            chunks.append({
-                "text": chunk,
-                "source": getattr(doc, "metadata", {}).get("source", "unknown")
-            })
-    return chunks
+# def chunk_pdf_to_text(pdf_path: str) -> list:
+#     loader = PyPDFLoader(pdf_path)
+#     docs = loader.load()
+#     splitter = RecursiveCharacterTextSplitter(
+#         chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
+#     )
+#     chunks = []
+#     for doc in docs:
+#         for chunk in splitter.split_text(doc.page_content):
+#             chunks.append({
+#                 "text": chunk,
+#                 "source": getattr(doc, "metadata", {}).get("source", "unknown")
+#             })
+#     return chunks
 
 
-def upsert_chunks_to_pinecone(chunks: list, file_id: str):
-    texts = [c["text"] for c in chunks]
-    embeddings_response = client.embeddings.create(
-        model=EMBED_MODEL,
-        input=texts
-    )
-    vectors = embeddings_response.data
-    to_upsert = []
-    for i, v in enumerate(vectors):
-        to_upsert.append({
-            "id": f"{file_id}_{i}",
-            "values": v.embedding,
-            "metadata": {
-                "text": chunks[i]["text"],
-                "source": chunks[i]["source"],
-                "file_id": file_id
-            }
-        })
-    index.upsert(vectors=to_upsert)
+# def upsert_chunks_to_pinecone(chunks: list, file_id: str):
+#     texts = [c["text"] for c in chunks]
+#     embeddings_response = client.embeddings.create(
+#         model=EMBED_MODEL,
+#         input=texts
+#     )
+#     vectors = embeddings_response.data
+#     to_upsert = []
+#     for i, v in enumerate(vectors):
+#         to_upsert.append({
+#             "id": f"{file_id}_{i}",
+#             "values": v.embedding,
+#             "metadata": {
+#                 "text": chunks[i]["text"],
+#                 "source": chunks[i]["source"],
+#                 "file_id": file_id
+#             }
+#         })
+#     index.upsert(vectors=to_upsert)
 
 
-def query_pinecone(text: str, top_k: int = TOP_K):
-    embedding = client.embeddings.create(
-        model=EMBED_MODEL,
-        input=text
-    ).data[0].embedding
+# def query_pinecone(text: str, top_k: int = TOP_K):
+#     embedding = client.embeddings.create(
+#         model=EMBED_MODEL,
+#         input=text
+#     ).data[0].embedding
 
-    response = index.query(
-        vector=embedding,
-        top_k=top_k,
-        include_metadata=True
-    )
-    return response.get("matches", [])
+#     response = index.query(
+#         vector=embedding,
+#         top_k=top_k,
+#         include_metadata=True
+#     )
+#     return response.get("matches", [])
 
 
 # def generate_rag_response(question: str, hits):

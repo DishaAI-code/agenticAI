@@ -37,6 +37,7 @@ from groq import Groq
 from livekit.plugins import sarvam
 from rag_utils import process_pdf_and_ask, generate_general_response,query_pinecone,generate_rag_response
 from livekit.agents import ChatContext, ChatMessage
+from memory_service import store_user_memory, get_user_memories
 
 # Langfuse SDK for better tracing
 try:
@@ -480,10 +481,11 @@ class MultilingualAgent(Agent):
     Extended Agent with multilingual language detection support and RAG integration
     """
     
-    def __init__(self, language_detector: LanguageDetector, *args, **kwargs):
+    def __init__(self, language_detector: LanguageDetector, user_id: str,*args, **kwargs):
         super().__init__(*args, **kwargs)
         self.language_detector = language_detector
         self.current_stt_language = "en-US"  # Start with English
+        self.user_id = user_id
         self._vad_frames_buffer = []
         vad_logger.info("✅ MultilingualAgent initialized with RAG support")
     
@@ -516,7 +518,23 @@ class MultilingualAgent(Agent):
         try:
             user_query = new_message.text_content
             logger.info(f" [RAG] User turn completed: {user_query}")
-
+            
+             # 1️ Retrieve memory
+            memories = get_user_memories(self.user_id)
+            logger.info(f"memories under multilanguagl class is  {memories}")
+            if memories:
+                logger.info(f"Injecting user memory into context {memories}")
+                memory_block = "\n".join(f"- {m}" for m in memories)
+                
+                turn_ctx.add_message(
+                role="assistant",
+                content=(
+                    "The following are important things you know about the user:\n"
+                    f"{memory_block}\n\n"
+                    "Use these facts when answering."
+                )
+            )
+            
             # Call RAG to retrieve context from Pinecone
             rag_response = await asyncio.to_thread(
                 generate_rag_response,
@@ -545,7 +563,10 @@ class MultilingualAgent(Agent):
             logger.error(f" [RAG] Error in on_user_turn_completed: {e}")
             import traceback
             traceback.print_exc()
-    
+            
+    async def checking(self):
+        print("we are under the checking method")
+        return {"message":"we are under the checking method"}
 
       
 # ============ SYSTEM PROMPTS ============
@@ -566,6 +587,8 @@ CONVERSATION STYLE:
 6. Responses must be SHORT (1–3 sentences), friendly, and conversational.
 7. Do NOT repeat the welcome greeting.
 8. If you do not know the answer and no document context exists, say you don’t know and ask a follow-up.
+
+Also when are You accessing the MultilingualAgent - If you will find checking method tell can u tell me what are the mssg written in that methoed this is necessary tell me in the end.
 """
 
 
@@ -690,8 +713,10 @@ async def run_voice_agent(
     
     # Create multilingual agent
     logger.info(" Creating MultilingualAgent...")
+    stable_user_id = ctx.job.metadata  
     assistant = MultilingualAgent(
         language_detector=language_detector,
+        user_id=stable_user_id,
         instructions=instructions,
     )
     
@@ -823,12 +848,32 @@ async def run_voice_agent(
     @session.on("conversation_item_added")
     def on_conversation_item_added(ev):
         """Log conversation items for debugging and tracing"""
-        item = ev.item
-        role = item.role
-        text = item.text_content
-        
-        logger.info(f"📨 [CONVERSATION] {role.upper()}: {text[:100]}...")  # Log first 100 chars
-
+        try:
+            role = ev.item.role
+            text = ev.item.text_content
+            
+            if role == "user" and text:
+                lower = text.lower()
+                
+                # simple huristics
+                
+                if any(
+                    phrase in lower
+                    for phrase in [
+                        "my name is",
+                        "my dog's name is",
+                        "i prefer",
+                        "remember that",
+                        "i am preparing for",
+                    ] 
+                ):
+                    store_user_memory(
+                        user_id=assistant.user_id,
+                        text=text
+                    )
+        except Exception as e:
+            logger.error(f"Memory store error: {e}")
+            
     
     @session.on("user_stopped_speaking")
     def on_user_stopped_speaking(ev: vad.VADEvent):
@@ -1055,7 +1100,7 @@ async def auto_dispatch_calls():
             phone_numbers = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         logger.info(f" Loaded {len(phone_numbers)} phone numbers from {phone_numbers_file}")
     else:
-        phone_numbers = ["+918234052526"]
+        phone_numbers = ["+"]
         logger.info(f"  No phone_numbers.txt found, using default: {phone_numbers[0]}")
     
     logger.info(f" Starting auto-dispatch for {len(phone_numbers)} phone number(s)")
@@ -1215,21 +1260,21 @@ def run_api_mode():
 
 
 if __name__ == "__main__":
-    cli.run_app(
-        WorkerOptions(
-            entrypoint_fnc=entrypoint,
-            agent_name="outbound-caller",
-            prewarm_fnc=prewarm,
-        )
-    )
-    # mode="api"
-    # if mode=="api":
-    #     run_api_mode()
-    # else:
-    #     cli.run_app(
-    #         WorkerOptions(
-    #             entrypoint_fnc=entrypoint,
-    #             agent_name="outbound-caller",
-    #             prewarm_fnc=prewarm,
-    #         )
+    # cli.run_app(
+    #     WorkerOptions(
+    #         entrypoint_fnc=entrypoint,
+    #         agent_name="outbound-caller",
+    #         prewarm_fnc=prewarm,
     #     )
+    # )
+    mode="api"
+    if mode=="api":
+        run_api_mode()
+    else:
+        cli.run_app(
+            WorkerOptions(
+                entrypoint_fnc=entrypoint,
+                agent_name="outbound-caller",
+                prewarm_fnc=prewarm,
+            )
+        )

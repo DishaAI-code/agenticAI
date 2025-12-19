@@ -42,3 +42,4 @@ langchain-community>=0.0.20
 pinecone
 openai
 requests
+mem0ai
